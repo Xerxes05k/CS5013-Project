@@ -1,0 +1,88 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{parskip}
+
+\title{CS5013 Design Document \\ \large Hostel Cycle Booking Web Portal}
+\author{Yashas Katyal, CE24B128 \qquad Aditya Gautam, CE24B001}
+\date{11 September 2026}
+
+\begin{document}
+\maketitle
+
+\section{Scoping feedback and how it shaped this design}
+In the proposal review, course staff asked us to justify why the project needed the full semester given AI-assisted coding. In response we made the scope concrete rather than just arguing for it in words: we committed to ID-card verification (an OpenCV/Tesseract OCR pipeline) tied to institute smail login, live enforcement of the hostel's own booking rules (24-hour hold cap, 3 rentals/week), and a self-trained classifier that turns free-text return comments into an actionable maintenance list. Those four pieces are the actual sources of complexity in the system, and the architecture below is organized around them as separate modules so that each can be built, tested, and demoed independently rather than as one large opaque booking app.
+
+\section{Architecture note: modules and interfaces}
+The system is a single Spring Boot application, internally split into eight modules. Each module exposes a narrow Java interface (a Spring service bean) that the others call -- there is no direct cross-module database access, so a module's internals can change without breaking its callers.
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Auth Module} -- institute smail login via Spring Security + OAuth2.
+  \begin{itemize}[leftmargin=*]
+    \item \texttt{AuthService.login(oauthToken) -> ResidentSession}
+    \item \texttt{AuthService.currentResident(session) -> ResidentIdentity\{rollNumber, smailAddress\}}
+  \end{itemize}
+  \item \textbf{ID Verification Module} -- OpenCV image preprocessing + Tesseract OCR (via Tess4j) on the resident's ID card photo.
+  \begin{itemize}[leftmargin=*]
+    \item \texttt{IdVerificationService.scanCard(imageBytes) -> ExtractedIdentity\{name, rollNumber, hostel, confidence\}}
+    \item \texttt{IdVerificationService.matchesLogin(ExtractedIdentity, ResidentIdentity) -> boolean}
+  \end{itemize}
+  \item \textbf{Rule Engine} -- the hostel's own booking rules, independent of the booking flow itself so the limits can be unit-tested in isolation.
+  \begin{itemize}[leftmargin=*]
+    \item \texttt{RuleEngine.checkEligibility(residentId) -> EligibilityResult\{allowed, reason\}}
+  \end{itemize}
+  \item \textbf{Booking Module} -- availability, reservation, and concurrency control over the cycle pool.
+  \begin{itemize}[leftmargin=*]
+    \item \texttt{BookingService.getAvailability() -> List<CycleStatus>}
+    \item \texttt{BookingService.createBooking(residentId, cycleId, ExtractedIdentity) -> Booking} -- calls \texttt{IdVerificationService.matchesLogin} and \texttt{RuleEngine.checkEligibility} before committing
+  \end{itemize}
+  \item \textbf{Pickup/Return Module} -- the guard-witnessed passcode confirmation at the cycle stand.
+  \begin{itemize}[leftmargin=*]
+    \item \texttt{TransactionService.confirmPickup(bookingId, passcode) -> CycleState}
+    \item \texttt{TransactionService.confirmReturn(bookingId, passcode, conditionNote) -> CycleState}
+  \end{itemize}
+  \item \textbf{Maintenance Comment Module} -- the post-return free-text box and its classifier.
+  \begin{itemize}[leftmargin=*]
+    \item \texttt{MaintenanceService.submitComment(bookingId, text) -> List<MaintenanceFlag>} -- calls \texttt{CommentClassifier.classify}
+    \item \texttt{CommentClassifier.classify(text) -> List<String>} (Apache OpenNLP, trained on our labeled phrase set)
+  \end{itemize}
+  \item \textbf{Reporting Module} -- the GS/Warden-facing weekly view.
+  \begin{itemize}[leftmargin=*]
+    \item \texttt{ReportService.getWeeklyUsageReport() -> UsageReport}
+    \item \texttt{ReportService.getMaintenanceList() -> List<MaintenanceFlag>}
+  \end{itemize}
+  \item \textbf{Persistence Module} -- Spring Data JPA repositories over SQLite (\texttt{ResidentRepository}, \texttt{CycleRepository}, \texttt{BookingRepository}, \texttt{CommentRepository}), used by every module above but never bypassed.
+\end{enumerate}
+
+\section{Test plan}
+At least one test per module, run with JUnit 5 and Spring Boot's test slices:
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Auth:} a request to a protected endpoint with no smail session is rejected with 401; a valid OAuth token resolves to the correct \texttt{ResidentIdentity}.
+  \item \textbf{ID Verification:} a known-good sample ID photo yields the expected roll number and a confidence above threshold; a deliberately blurred/glare photo yields low confidence rather than a wrong-but-confident match.
+  \item \textbf{Rule Engine:} a resident with 3 bookings already this rolling week is denied a 4th; a resident holding a cycle for 23 hours is eligible to return normally, at 25 hours the booking is flagged overdue.
+  \item \textbf{Booking:} a concurrency test -- two threads calling \texttt{createBooking} for the same cycle at the same time -- asserts exactly one succeeds and the other receives a clear "already booked" result, not a corrupted record.
+  \item \textbf{Pickup/Return:} an incorrect passcode leaves the cycle's state unchanged; the correct passcode transitions \texttt{Booked -> Issued} and, later, \texttt{Issued -> Returned}.
+  \item \textbf{Maintenance Comment:} the comment "chain keeps slipping off" is classified with a chain-related flag; "cycle is totally fine" produces no flags.
+  \item \textbf{Reporting:} after seeding a known set of bookings and returns in a test database, \texttt{getWeeklyUsageReport} returns the exact expected total usage hours per cycle.
+  \item \textbf{Persistence:} a round-trip test -- save a \texttt{Booking} entity, fetch it back by id, assert every field matches -- against an in-memory test database.
+\end{itemize}
+
+\section{Milestone plan (revised)}
+The proposal's three-checkpoint plan (design doc / mid-demo / final) still holds, but each checkpoint is now defined against the eight modules above instead of a single "booking workflow," since that is what actually changed in response to the scoping feedback -- we're building four extra pieces of real infrastructure (OCR, smail cross-check, rule enforcement, comment classifier), not padding the original plan.
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{By the design doc (11 Sep 2026, this document):} Persistence Module's schema finalized; Auth and Booking Modules scaffolded with static/prototype pages; ID Verification Module has a working OCR prototype tested against sample card photos outside the app.
+  \item \textbf{By the mid-demo (9 Oct 2026):} Auth, ID Verification, Rule Engine, Booking, and Pickup/Return Modules integrated end-to-end -- a resident can log in with smail, get OCR-verified, book a cycle under the 24-hour/3-per-week rules, and confirm pickup/return via passcode in front of the guard. Reporting Module shows raw usage hours.
+  \item \textbf{By the final submission (6 Nov 2026):} Maintenance Comment Module (comment box + trained classifier) integrated; Reporting Module extended to combine guard notes and auto-flagged comment terms; the GS and guard can run the full system themselves on the hostel's own infrastructure.
+\end{itemize}
+
+\section{Risks and plan B}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Risk:} a resident's phone can't get a clean-enough photo of their ID card for OCR to read reliably (poor lighting, glare, a worn card), blocking them from booking. \textbf{Plan B:} allow manual roll-number entry after a fixed number of failed scan attempts, still cross-checked against the resident database and smail login.
+  \item \textbf{Risk:} setting up institute smail OAuth login may need IT/domain approval we don't control on this timeline. \textbf{Plan B:} fall back to a simple smail-address-plus-OTP login instead of full OAuth if institute OAuth access isn't available in time.
+  \item \textbf{Risk:} our self-trained maintenance-comment classifier may miss real issues or flag false positives on short, informal, or mixed-language comments. \textbf{Plan B:} always show the GS the raw comment alongside any auto-flagged terms, so the model is a triage aid rather than the sole source of truth.
+  \item \textbf{Risk:} the 24-hour/3-per-week rule enforcement has edge cases (e.g., a cycle stuck with a resident past 24 hours due to a broken lock, not their fault) that could unfairly count against them. \textbf{Plan B:} give the GS a manual override to waive or reset a limit case-by-case.
+\end{enumerate}
+
+\end{document}

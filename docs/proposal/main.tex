@@ -1,0 +1,113 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{graphicx} % Required for inserting images
+\title{CS5013 Project Proposal \\ \large Hostel Cycle Booking Web Portal}
+\author{Yashas Katyal, CE24B128 \qquad Aditya Gautam, CE24B001}
+\date{1 September 2026}
+
+\begin{document}
+\maketitle
+
+\noindent\textbf{Project scope.} The portal lets a resident log in with their smail account, scan their institute ID card, and book a free cycle from their phone; a computer-vision pipeline (OpenCV + Tesseract OCR) reads the card's name, roll number, and hostel and cross-checks it against both the resident database and the smail login, while the data layer enforces a 24-hour hold limit and a 3-rentals-per-week cap. At the cycle stand the resident enters their passcode in front of the guard to confirm pickup/return -- the guard witnesses this and hands the cycle over physically, with no device of their own. Cycle condition is tracked via a guard check-in note plus a post-return comment box, whose free text is passed through a small self-trained classifier that flags known maintenance phrases (``chain keeps slipping,'' ``needs oiling''), giving the GS an actionable maintenance list instead of raw comments to sift through. The main sources of complexity are the CV/OCR pipeline, tying the smail login to the OCR-extracted identity, live enforcement of the booking rules against a resident's rental history, and training/integrating the maintenance-comment classifier.
+
+\section{Team information}
+Team ID: CE24B001 and CE24B128 
+
+\begin{itemize}[leftmargin=*]
+  \item Member 1: Yashas Katyal -- roll no. CE24B128 -- department Civil Engineering 
+  \item Member 2: Aditya Gautam -- roll no. CE24B001 -- department  Civil Engineering 
+  \item Github repository: \url{https://github.com/Xerxes05k/CS5013-Project/}
+\end{itemize}
+
+Primary contact email: ce24b128@smail.iitm.ac.in , ce24b001@smail.iitm.ac.in
+
+
+\section{Problem statement}
+Jamuna Hostel maintains a pool of shared bicycles for residents, currently tracked through a manual paper register kept at the hostel gate. Residents cannot see which cycles are free without physically walking to the stand or asking the guard on duty, which leads to residents waiting idle, cycles being taken without being logged, and disputes over who last had a given cycle. The hostel's General Secretary, who is responsible for the cycle pool, has no reliable record of usage hours or reported damage, and no way to enforce fair-use rules such as a maximum rental duration, so worn or broken cycles are not identified until a resident complains and a few residents can monopolize the pool. This makes both day-to-day booking and longer-term maintenance planning harder than they need to be.
+
+\section{Users and stakeholder}
+Named stakeholder: Warden, Jamuna,Godavari Hostel  and General Secretary, Jamuna Hostel.
+
+First we contacted to Jamuna Hostel, General Secretary for anything we can do related to hostel. He suggested out this idea as hostel is going to implement it by end of the semester. So after that we asked for warden, Jamuna and Godavari Hostel approval regarding the project if we can continue. Warden told there should be no financial requriments else everything is fine.
+
+The stakeholder's acknowledgement email is attached as Appendix A.
+
+\section{Prior work and why it does not suffice}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Manual paper register + verbal/WhatsApp coordination} -- current incumbent, no link. Overlap: this is exactly what residents and the guard use today to track who has which cycle. Gap: no live availability view, entries are handwritten and easy to skip or falsify, there is no identity check, no enforcement of a rental-duration or per-week limit, and no usage-hours or damage log.
+  \item \textbf{Google Forms + Google Sheets} -- \url{https://www.google.com/forms/about/}. Overlap: could be set up quickly to let residents "book" a slot and would give the hostel a spreadsheet of bookings at near-zero cost. Gap: a form has no concept of real-time slot locking, so two residents can book the same cycle simultaneously; it cannot verify that the person booking is who they claim to be, or that they haven't already exceeded their weekly rental quota; and there is no structured field for usage hours or damage reports tied to a specific cycle.
+  \item \textbf{Commercial docked bike-share (e.g., Chartered Bike, Ola Pedal)} -- Ola Pedal ran a docked, GPS-lock pilot at IIT Kanpur. Overlap: app-based unlock and usage tracking for a campus cycle fleet. Gap: built for GPS-enabled smart docks and paid vendor infrastructure/subscription pricing sized for city- or campus-wide fleets, not a single hostel's shared cycles; requires hardware the hostel has no budget or mandate to install, and the GS wants the guard, not a vendor, to remain in control of issue and return.
+  \item \textbf{Open Source Bike Share} -- \url{https://github.com/cyklokoalicia/OpenSourceBikeShare}. Overlap: free, self-hostable bike-share software with QR-code unlock and rental tracking. Gap: designed around SMS/QR unlock codes and a Raspberry Pi-based station controller, which assumes per-cycle electronics the hostel's bicycles do not have; adopting it would mean retrofitting hardware onto every cycle rather than just adding a resident-facing booking app, which is out of scope for what the GS asked for.
+\end{enumerate}
+
+``There is nothing like this'' is almost never true and will be marked down -- the honest closest incumbent here is the hostel's own paper register.
+
+\section{Tech stack}
+Language: \textbf{Java} (course policy).
+\begin{itemize}[leftmargin=*]
+  \item Build system: Maven
+  \item Framework: Spring Boot (Spring MVC + Thymeleaf for server-rendered, mobile-friendly pages -- no app install needed on a resident's phone)
+  \item Key libraries: Spring Web, Spring Data JPA, Thymeleaf, SQLite (via \texttt{sqlite-jdbc}) for storage, Spring Validation, Spring Security with OAuth2 for institute (smail) login, OpenCV (via \texttt{javacv}/\texttt{bytedeco}) for ID card image preprocessing, Tesseract OCR (via \texttt{Tess4j}) for reading text off the scanned card, and Apache OpenNLP for the maintenance-comment classifier
+  \item Where the tool will run: a free-tier cloud host (e.g. Render/Railway for the Spring Boot service), reachable over the internet, per the Warden's no-cost condition. Residents use the portal on their own phone; the guard needs no separate device -- they simply watch the resident's phone screen at the cycle stand
+  \item ID verification (at booking time, on the resident's own phone): the resident logs in with their smail account, then scans their institute ID card; OCR extracts the printed name, roll number, and hostel, which must match both the resident database and the roll number tied to their smail login before the booking is confirmed. A bad photo can be retaken rather than blocking a live transaction
+  \item Booking rules: enforced in the data layer -- at most 24 hours held per rental, at most 3 rentals per resident per rolling week -- both checked before a booking is confirmed
+  \item Pickup/return confirmation (at the cycle stand, in front of the guard): the resident enters their passcode in the app; the guard witnesses this and hands over or accepts the cycle physically
+  \item Cycle condition tracking: a guard-entered condition note at check-in, plus a free-text comment box shown to the resident after they return a cycle. Comments are passed through a small classifier we train ourselves to flag known maintenance phrases (e.g., ``chain keeps slipping,'' ``needs oiling'') for the GS's maintenance list
+\end{itemize}
+
+\section{AI-usage statement}
+\emph{We will use AI coding assistants (such as Claude Code, GitHub Copilot, ChatGPT, or Gemini) during this project, in line with the course policy on AI-assisted programming. Every line of code we submit will be code we understand and can explain in the viva, whether we typed it or the assistant generated it.}
+
+\section{Verification plan}
+Test fixtures we will use:
+\begin{itemize}[leftmargin=*]
+  \item A de-identified export of the hostel's current paper register (a week's worth of entries), provided by the guard/GS, used to check that logged usage hours match what was recorded by hand.
+  \item A synthetic corner-case set: two residents booking the same cycle within seconds of each other, a resident entering a wrong passcode at pickup, a cycle returned without ever being checked out, and a resident attempting a booking that violates the 24-hour or 3-per-week limit.
+  \item A set of sample ID card photos captured under varying conditions (good lighting, glare, a tilted angle, motion blur), each paired with a matching or deliberately mismatched smail login, to test OCR accuracy and the smail--card cross-check together.
+  \item A labeled set of sample return comments (e.g., ``chain keeps slipping off,'' ``needs oiling,'' ``cycle is totally fine'') to measure the maintenance-phrase classifier's precision and recall.
+\end{itemize}
+
+User-visible acceptance criteria the stakeholder will use to say ``yes, this works'':
+\begin{itemize}[leftmargin=*]
+  \item A resident can log in with their smail account, scan their ID card, and complete a booking from their phone in under 60 seconds, including a retake if the first scan fails to read.
+  \item A resident whose smail login does not match their scanned ID is blocked from booking, with a clear reason shown; a resident who has already hit the 24-hour or weekly-3 limit is blocked automatically, with no manual GS intervention needed.
+  \item At the cycle stand, a resident can confirm an issue or return by entering their passcode in front of the guard in under 10 seconds, with no double-booking possible.
+  \item At the end of a week, the GS can pull a usage-hours-per-cycle report and a maintenance list combining guard notes and auto-flagged comment terms, without reading every comment personally.
+\end{itemize}
+
+\section{Milestone plan}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{By the design doc (11 Sep 2026):} data model (residents, cycles, bookings, passcodes, rental-rule counters) scoped; smail login and the booking screen (including ID scan) scaffolded as prototype pages.
+  \item \textbf{By the mid-demo (9 Oct 2026):} the core workflow runs end-to-end on real input -- a resident logs in with smail, books a cycle after OCR/smail verification, confirms pickup and return at the stand via passcode in front of the guard, the 24-hour/3-per-week rules are enforced, and usage hours are logged.
+  \item \textbf{By the final submission (6 Nov 2026):} the free-text comment box and the trained maintenance-phrase classifier are integrated, and the GS and guard can run the portal themselves, including damage reporting and the usage/maintenance report.
+\end{itemize}
+
+\section{Risks and plan B}
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Risk:} a resident's phone can't get a clean-enough photo of their ID card for OCR to read reliably (poor lighting, glare, a worn card), blocking them from booking. \textbf{Plan B:} allow manual roll-number entry after a fixed number of failed scan attempts, still cross-checked against the resident database and smail login.
+  \item \textbf{Risk:} setting up institute smail OAuth login may need IT/domain approval we don't control on this timeline. \textbf{Plan B:} fall back to a simple smail-address-plus-OTP login instead of full OAuth if institute OAuth access isn't available in time.
+  \item \textbf{Risk:} our self-trained maintenance-comment classifier may miss real issues or flag false positives on short, informal, or mixed-language comments. \textbf{Plan B:} always show the GS the raw comment alongside any auto-flagged terms, so the model is a triage aid rather than the sole source of truth.
+  \item \textbf{Risk:} the 24-hour/3-per-week rule enforcement has edge cases (e.g., a cycle stuck with a resident past 24 hours due to a broken lock, not their fault) that could unfairly count against them. \textbf{Plan B:} give the GS a manual override to waive or reset a limit case-by-case.
+\end{enumerate}
+
+
+
+\appendix
+\section{Stakeholder acknowledgement email}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Screenshot 2026-08-21 211533.png}
+    \caption{Approval request along with details of the project}
+    \label{fig:my_label}
+\end{figure}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Screenshot 2026-08-21 211543.png}
+    \caption{Approval from the current Jamuna warden}
+    \label{fig:my_label}
+\end{figure}
+
+\end{document}

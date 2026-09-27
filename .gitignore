@@ -1,0 +1,33 @@
+# Maven / Java
+target/
+*.class
+*.jar
+!app/.mvn/wrapper/maven-wrapper.jar
+*.log
+
+# SQLite runtime db (schema comes from JPA; seed data from data.sql)
+app/data/
+*.db
+*.db-journal
+
+# OCR / NLP model artefacts and sample photos are checked in deliberately;
+# but never commit real resident ID photos
+docs/samples/real/
+
+# LaTeX build output
+*.aux
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Secrets
+.env
+application-local.properties
