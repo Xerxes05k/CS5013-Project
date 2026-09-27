@@ -1,0 +1,69 @@
+/* Phone-first: residents open this on their own phone, so everything is a single
+   column with touch-sized rows. No framework, no build step. */
+:root {
+    --free: #157347;
+    --busy: #9a6700;
+    --repair: #b42318;
+    --line: #d8dbe0;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 1rem;
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: #1b1f24;
+    max-width: 34rem;
+    margin-inline: auto;
+}
+
+h1 { font-size: 1.25rem; margin: 0 0 .25rem; }
+
+.summary { margin: 0 0 1rem; color: #57606a; }
+
+.cycle-list { list-style: none; margin: 0; padding: 0; }
+
+.cycle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: .9rem .75rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.label { font-weight: 600; }
+
+.state { font-size: .9rem; }
+.state-AVAILABLE .state { color: var(--free); }
+.state-BOOKED .state, .state-ISSUED .state { color: var(--busy); }
+.state-UNDER_REPAIR .state { color: var(--repair); }
+
+.note, .empty { color: #57606a; font-size: .9rem; }
+
+.login form { display: flex; flex-direction: column; gap: .4rem; }
+.login label { font-size: .9rem; color: #57606a; margin-top: .6rem; }
+
+input {
+    padding: .7rem;
+    font-size: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+}
+
+button {
+    margin-top: 1rem;
+    padding: .75rem 1rem;
+    font-size: 1rem;
+    border: 0;
+    border-radius: 6px;
+    background: #1b1f24;
+    color: #fff;
+}
+
+.error { color: var(--repair); }
+.notice { color: var(--free); }
+
+footer { margin-top: 2rem; }
+footer button { background: none; color: #57606a; padding: .5rem 0; }

@@ -13,18 +13,18 @@ Module names refer to [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - [x] Repo scaffolding: README, PLAN, CLAUDE.md, docs/, scripts/
 - [x] Architecture doc with module graph, ADRs 0001–0003
 - [x] Weekly push routine defined (`scripts/weekly-update.sh`)
-- [ ] Yashas added as collaborator on the repo (Aditya)
+- [x] Yashas added as collaborator on the repo (Aditya)
 - [ ] Maven installed locally (`brew install maven`)
 
 ## Week 1 — 21–27 Sep
 
 **Goal: a running Spring Boot skeleton with the data model persisted.**
 
-- [ ] `app/` Spring Boot project via Maven wrapper (`./mvnw`), Thymeleaf, Spring Data JPA, SQLite
-- [ ] **Persistence Module:** entities `Resident`, `Cycle`, `Booking`, `Comment`, `MaintenanceFlag`; repositories; round-trip test
-- [ ] **Auth Module:** decide OAuth2 vs OTP (ADR 0004) — try smail OAuth2 first; wire whichever works; 401-on-protected-route test
-- [ ] Availability page (read-only list of cycles) renders on a phone
-- [ ] Sunday push + PROGRESS entry
+- [x] `app/` Spring Boot project via Maven wrapper (`./mvnw`), Thymeleaf, Spring Data JPA, SQLite
+- [x] **Persistence Module:** entities `Resident`, `Cycle`, `Booking`, `Comment`, `MaintenanceFlag`; repositories; round-trip test
+- [x] **Auth Module:** decide OAuth2 vs OTP (ADR 0004) — try smail OAuth2 first; wire whichever works; 401-on-protected-route test
+- [x] Availability page (read-only list of cycles) renders on a phone
+- [x] Sunday push + PROGRESS entry
 
 ## Week 2 — 28 Sep–4 Oct
 

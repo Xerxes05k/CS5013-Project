@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cycles — Jamuna Hostel</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header>
+    <h1>Jamuna Hostel cycles</h1>
+    <p class="summary">
+        <span th:text="${availableCount}">0</span> of
+        <span th:text="${#lists.size(cycles)}">0</span> free right now
+    </p>
+</header>
+
+<main>
+    <ul class="cycle-list">
+        <li th:each="cycle : ${cycles}" th:class="'cycle state-' + ${cycle.state}">
+            <span class="label" th:text="${cycle.label}">JAM-01</span>
+            <span class="state" th:switch="${cycle.state.name()}">
+                <span th:case="'AVAILABLE'">Free</span>
+                <span th:case="'BOOKED'">Booked</span>
+                <span th:case="'ISSUED'">In use</span>
+                <span th:case="'UNDER_REPAIR'">Under repair</span>
+            </span>
+        </li>
+    </ul>
+    <p class="empty" th:if="${#lists.isEmpty(cycles)}">No cycles registered yet.</p>
+    <p class="note">Booking opens in the next version — this page is read-only for now.</p>
+</main>
+
+<footer>
+    <form th:action="@{/logout}" method="post">
+        <button type="submit">Log out</button>
+    </form>
+</footer>
+</body>
+</html>

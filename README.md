@@ -33,7 +33,11 @@ CS5013-Project/
 ├── scripts/
 │   ├── repo-map.sh        regenerates docs/REPO_MAP.md
 │   └── weekly-update.sh   the weekly commit-and-push routine
-└── app/                   (from week 1) the Spring Boot application
+└── app/                   the Spring Boot application
+    └── src/main/java/in/ac/iitm/cs5013/cyclebooking/
+        ├── persistence/   entities + repositories
+        ├── auth/          smail login (ADR 0004)
+        └── web/           Thymeleaf controllers
 ```
 
 A full, current map is in [docs/REPO_MAP.md](docs/REPO_MAP.md).
@@ -48,11 +52,13 @@ A full, current map is in [docs/REPO_MAP.md](docs/REPO_MAP.md).
 - **Maintenance-comment classifier:** Apache OpenNLP, trained on our own labeled phrase set
 - **Hosting:** free-tier cloud host (Render/Railway) — no cost to the hostel
 
-## Running (from week 1 onward)
+## Running
 
 ```bash
 cd app && ./mvnw spring-boot:run
 ```
+
+Then open http://localhost:8080 — it redirects to the login page. A dev resident and five cycles are seeded on an empty database; the credentials are in `app/src/main/resources/data.sql`. No global Maven install is needed (the wrapper handles it), but Java 21+ is.
 
 Tests:
 

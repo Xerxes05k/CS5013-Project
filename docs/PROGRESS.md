@@ -4,6 +4,31 @@ One entry per week, added before the Sunday push. Newest first. Each entry recor
 
 ---
 
+## Week 1 — 27 Sep 2026
+
+**Shipped**
+- `app/` — Spring Boot 4.1.1 on Java 25, Maven wrapper, Thymeleaf, Spring Data JPA, SQLite (`sqlite-jdbc` + Hibernate community dialect).
+- **Persistence Module:** `Resident`, `Cycle`, `Booking`, `Comment`, `MaintenanceFlag` entities with the five repositories. `Cycle` carries a JPA `@Version` for the week-2 booking race; `Booking.isOverdue` derives the 24-hour rule rather than storing a stale flag. `BookingRepository` already has the count query the Rule Engine needs.
+- **Auth Module:** smail-address + BCrypt passcode form login (`SecurityConfig`, `ResidentDetailsService`). ADR 0004 records why, not OAuth2, and how the switch stays cheap.
+- **Availability page:** `/cycles` renders the pool phone-first (single column, touch-sized rows, no CSS framework); `/login` is the only public route.
+- 7 tests, all green: Booking round-trip + open-booking lifecycle + the 23h/25h overdue boundary, and 3 auth tests (anonymous redirect, login public, authenticated render).
+- Verified end-to-end against a running server: form login → redirect to `/cycles` → seeded pool renders "3 of 5 free" with correct per-cycle states.
+
+**AI-assisted**
+- Claude Code wrote the entity/repository/config/test code and this entry. Three failures it had to diagnose rather than guess: Spring Initializr labels Boot `4.1.1.RELEASE` but Maven Central publishes `4.1.1`; Boot 4 moved the test-slice annotations (`DataJpaTest` → `org.springframework.boot.data.jpa.test.autoconfigure`, `WebMvcTest` → `org.springframework.boot.webmvc.test.autoconfigure`); and SQLite will not create a missing parent directory for its file.
+- Decision made by us, not the assistant: tests run against real SQLite (`@AutoConfigureTestDatabase(replace = NONE)` + shared-cache in-memory) instead of H2, because the week-2 concurrency behaviour is dialect-specific and H2 would test the wrong database.
+
+**Blocked**
+- Nothing blocking. Institute OAuth2 remains unavailable (ADR 0004) but is no longer on the critical path.
+- Maven is still not installed globally; the wrapper (`./mvnw`) covers it, so this is not worth fixing.
+
+**Next (week 2)**
+- Rule Engine (`checkEligibility`: 24-hour hold, 3-per-rolling-week) with the 3rd-vs-4th and 23h-vs-25h unit tests.
+- Booking Module `createBooking` with the two-thread concurrency test (exactly one wins).
+- ID Verification prototype: Tess4j + OpenCV over ≥10 sample ID photos, extraction accuracy recorded here.
+
+---
+
 ## Week 0 — 20 Sep 2026
 
 **Shipped**
