@@ -17,6 +17,9 @@
 	<properties>
 		<java.version>25</java.version>
 		<sqlite-jdbc.version>3.49.1.0</sqlite-jdbc.version>
+		<tess4j.version>5.20.0</tess4j.version>
+		<opencv.version>4.9.0-0</opencv.version>
+		<lept4j.version>1.21.1</lept4j.version>
 	</properties>
 
 	<dependencies>
@@ -54,6 +57,35 @@
 		<dependency>
 			<groupId>org.hibernate.orm</groupId>
 			<artifactId>hibernate-community-dialects</artifactId>
+		</dependency>
+
+		<!-- ID Verification (ADR 0003): Tesseract OCR via Tess4j, OpenCV for cleaning up the
+		     photo first. Both stay in Java per course policy. Tess4j calls the system
+		     libtesseract (brew install tesseract on macOS). -->
+		<dependency>
+			<groupId>net.sourceforge.tess4j</groupId>
+			<artifactId>tess4j</artifactId>
+			<version>${tess4j.version}</version>
+			<exclusions>
+				<!-- PDF command-line tools (and BouncyCastle with them); we only OCR images. -->
+				<exclusion>
+					<groupId>org.apache.pdfbox</groupId>
+					<artifactId>pdfbox-tools</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<!-- Pinned below tess4j's default: lept4j binds every Leptonica function at
+		     load time, and 1.24 needs symbols newer than the Leptonica 1.85 that
+		     Homebrew ships, which fails with UnsatisfiedLinkError. -->
+		<dependency>
+			<groupId>net.sourceforge.lept4j</groupId>
+			<artifactId>lept4j</artifactId>
+			<version>${lept4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openpnp</groupId>
+			<artifactId>opencv</artifactId>
+			<version>${opencv.version}</version>
 		</dependency>
 
 		<dependency>

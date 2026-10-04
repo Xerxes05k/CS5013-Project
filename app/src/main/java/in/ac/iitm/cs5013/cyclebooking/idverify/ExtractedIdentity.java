@@ -1,0 +1,9 @@
+package in.ac.iitm.cs5013.cyclebooking.idverify;
+
+/**
+ * What OCR read off an ID card. Any field may be null if it could not be read.
+ * Confidence is Tesseract's 0-100 score for the word that gave the roll number;
+ * 0 when no roll number was found.
+ */
+public record ExtractedIdentity(String name, String rollNumber, String hostel, float confidence) {
+}

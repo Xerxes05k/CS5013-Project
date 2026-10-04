@@ -4,8 +4,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import in.ac.iitm.cs5013.cyclebooking.persistence.CycleRepository;
-import in.ac.iitm.cs5013.cyclebooking.persistence.ResidentRepository;
+import in.ac.iitm.cs5013.cyclebooking.booking.BookingService;
 import in.ac.iitm.cs5013.cyclebooking.web.CycleController;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -28,10 +27,13 @@ class SecurityConfigTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private CycleRepository cycles;
+    private BookingService booking;
 
     @MockitoBean
-    private ResidentRepository residents;
+    private AuthService auth;
+
+    @MockitoBean
+    private ResidentDetailsService residentDetails;
 
     @Test
     void anonymousRequestForCyclesIsSentToLogin() throws Exception {
@@ -48,7 +50,7 @@ class SecurityConfigTest {
     @Test
     @WithMockUser(username = "ce24b128@smail.iitm.ac.in", roles = "RESIDENT")
     void authenticatedResidentSeesTheAvailabilityPage() throws Exception {
-        org.mockito.Mockito.when(cycles.findAllByOrderByLabelAsc()).thenReturn(List.of());
+        org.mockito.Mockito.when(booking.getAvailability()).thenReturn(List.of());
 
         mockMvc.perform(get("/cycles")).andExpect(status().isOk());
     }

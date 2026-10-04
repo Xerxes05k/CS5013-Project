@@ -30,10 +30,10 @@ Module names refer to [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 **Goal: booking works end-to-end with rules enforced; OCR proven outside the app.**
 
-- [ ] **Rule Engine:** `checkEligibility` — 24-hour hold, 3-per-rolling-week; unit tests for 3rd-vs-4th booking and 23h-vs-25h
-- [ ] **Booking Module:** `getAvailability`, `createBooking` with DB-level lock; two-thread concurrency test (exactly one wins)
+- [x] **Rule Engine:** `checkEligibility` — 24-hour hold, 3-per-rolling-week; unit tests for 3rd-vs-4th booking and 23h-vs-25h
+- [x] **Booking Module:** `getAvailability`, `createBooking` with DB-level lock; two-thread concurrency test (exactly one wins)
 - [ ] **ID Verification Module (prototype):** Tess4j + OpenCV pipeline run on ≥10 sample ID photos (good light / glare / tilt / blur); record extraction accuracy in PROGRESS
-- [ ] Sunday push + PROGRESS entry
+- [x] Sunday push + PROGRESS entry
 
 ## Week 3 — 5–9 Oct  ← **mid-demo Fri 9 Oct**
 

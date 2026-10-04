@@ -16,6 +16,8 @@
 </header>
 
 <main>
+    <p class="notice" th:if="${notice}" th:text="${notice}">Booked.</p>
+    <p class="error" th:if="${error}" th:text="${error}">Not booked.</p>
     <ul class="cycle-list">
         <li th:each="cycle : ${cycles}" th:class="'cycle state-' + ${cycle.state}">
             <span class="label" th:text="${cycle.label}">JAM-01</span>
@@ -25,10 +27,12 @@
                 <span th:case="'ISSUED'">In use</span>
                 <span th:case="'UNDER_REPAIR'">Under repair</span>
             </span>
+            <form th:if="${cycle.bookable()}" th:action="@{/cycles/{id}/book(id=${cycle.id})}" method="post">
+                <button type="submit" class="book">Book</button>
+            </form>
         </li>
     </ul>
     <p class="empty" th:if="${#lists.isEmpty(cycles)}">No cycles registered yet.</p>
-    <p class="note">Booking opens in the next version — this page is read-only for now.</p>
 </main>
 
 <footer>

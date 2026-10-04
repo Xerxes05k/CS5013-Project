@@ -35,7 +35,7 @@ h1 { font-size: 1.25rem; margin: 0 0 .25rem; }
 
 .label { font-weight: 600; }
 
-.state { font-size: .9rem; }
+.state { font-size: .9rem; margin-left: auto; }
 .state-AVAILABLE .state { color: var(--free); }
 .state-BOOKED .state, .state-ISSUED .state { color: var(--busy); }
 .state-UNDER_REPAIR .state { color: var(--repair); }
@@ -64,6 +64,9 @@ button {
 
 .error { color: var(--repair); }
 .notice { color: var(--free); }
+
+.cycle form { margin: 0; }
+button.book { margin-top: 0; padding: .5rem .9rem; }
 
 footer { margin-top: 2rem; }
 footer button { background: none; color: #57606a; padding: .5rem 0; }
