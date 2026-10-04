@@ -65,9 +65,13 @@ Rules: at most **24 hours** held per rental; at most **3 rentals per rolling 7 d
 Availability, reservation, and concurrency control over the cycle pool. `createBooking` calls `IdVerificationService.matchesLogin` and `RuleEngine.checkEligibility` before committing, and takes a DB-level lock on the cycle row so two residents can't book the same cycle.
 
 ```java
-List<CycleStatus> getAvailability();
-Booking           createBooking(long residentId, long cycleId, ExtractedIdentity id);
+List<CycleStatus>       getAvailability();
+BookingConfirmation     createBooking(ResidentIdentity r, long cycleId, ExtractedIdentity scannedCard);
+BookingConfirmation     createBookingWithTypedRoll(ResidentIdentity r, long cycleId, String typedRoll);
+Optional<CurrentRental> currentRental(long residentId);
 ```
+
+`createBookingWithTypedRoll` is the fallback when the card will not scan. The web layer offers it only after 3 failed scans. The booking is then marked `TYPED_ROLL` and the guard is asked to check the physical card at pickup.
 
 ### 5. Pickup/Return Module — `transaction`
 The guard-witnessed step at the cycle stand. The resident enters their passcode in the app; the guard watches and hands over / accepts the cycle. **The guard has no device.**
@@ -76,6 +80,8 @@ The guard-witnessed step at the cycle stand. The resident enters their passcode 
 CycleState confirmPickup(long bookingId, String passcode);
 CycleState confirmReturn(long bookingId, String passcode, String guardConditionNote);
 ```
+
+The passcode is the resident's login passcode, checked against the same BCrypt hash. Week 3 ships `confirmReturn(bookingId, passcode)`; the guard's condition note is added in week 4 with the Maintenance Module.
 
 ### 6. Maintenance Comment Module — `maintenance`
 Post-return free-text comment box. Comments go through a small OpenNLP classifier trained on our labeled phrase set. The raw comment is always shown alongside the flags (ADR 0003).

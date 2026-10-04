@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Usage report — Jamuna Hostel cycles</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header>
+    <h1>Cycle usage, last 7 days</h1>
+    <p class="summary"><span th:text="${from}">27 Sep</span> to <span th:text="${to}">4 Oct</span></p>
+</header>
+
+<main>
+    <table class="report">
+        <thead>
+        <tr><th>Cycle</th><th class="num">Rentals</th><th class="num">Hours out</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="row : ${report.cycles}">
+            <td th:text="${row.cycleLabel}">JAM-01</td>
+            <td class="num" th:text="${row.rentals}">0</td>
+            <td class="num" th:text="${#numbers.formatDecimal(row.hours, 1, 1)}">0.0</td>
+        </tr>
+        </tbody>
+        <tfoot>
+        <tr>
+            <th>Total</th>
+            <td></td>
+            <td class="num" th:text="${#numbers.formatDecimal(report.totalHours(), 1, 1)}">0.0</td>
+        </tr>
+        </tfoot>
+    </table>
+    <p class="note">Hours count from pickup to return. A cycle still out counts up to now.</p>
+    <p><a th:href="@{/cycles}">&larr; All cycles</a></p>
+</main>
+</body>
+</html>

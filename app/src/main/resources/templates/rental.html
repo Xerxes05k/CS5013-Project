@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My cycle — Jamuna Hostel cycles</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header>
+    <h1>My cycle: <span th:text="${rental.cycleLabel}">JAM-01</span></h1>
+    <p class="summary" th:if="${rental.awaitingPickup()}">Booked <span th:text="${bookedAt}">Sun 4 Oct, 2:00 pm</span>, not picked up yet</p>
+    <p class="summary" th:unless="${rental.awaitingPickup()}">
+        Picked up <span th:text="${pickedUpAt}">Sun 4 Oct, 2:00 pm</span>.
+        Due back by <strong th:text="${dueBy}">Mon 5 Oct, 2:00 pm</strong>.
+    </p>
+</header>
+
+<main class="stack">
+    <p class="notice" th:if="${notice}" th:text="${notice}">Done.</p>
+    <p class="error" th:if="${error}" th:text="${error}">Wrong passcode.</p>
+    <p class="error" th:if="${rental.overdue}">This cycle is past the 24-hour limit. Please return it now.</p>
+
+    <p class="guard" th:if="${rental.awaitingPickup() and rental.guardShouldCheckCard()}">
+        Guard: this booking was made without a card scan. Check the resident's ID card before
+        handing over the cycle.
+    </p>
+
+    <form th:if="${rental.awaitingPickup()}" th:action="@{/rental/pickup}" method="post">
+        <p>At the cycle stand, type your passcode while the guard watches. The guard hands over
+            <strong th:text="${rental.cycleLabel}">JAM-01</strong> once it's accepted.</p>
+        <label for="pickup-passcode">Passcode</label>
+        <input type="password" id="pickup-passcode" name="passcode" autocomplete="current-password" required>
+        <button type="submit">Confirm pickup</button>
+    </form>
+
+    <form th:unless="${rental.awaitingPickup()}" th:action="@{/rental/return}" method="post">
+        <p>Bring the cycle back to the stand and type your passcode while the guard watches.</p>
+        <label for="return-passcode">Passcode</label>
+        <input type="password" id="return-passcode" name="passcode" autocomplete="current-password" required>
+        <button type="submit">Confirm return</button>
+    </form>
+
+    <p><a th:href="@{/cycles}">&larr; All cycles</a></p>
+</main>
+</body>
+</html>

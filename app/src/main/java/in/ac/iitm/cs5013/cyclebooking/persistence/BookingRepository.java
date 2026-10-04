@@ -20,4 +20,13 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findAllOutstanding();
 
     List<Booking> findByResidentIdOrderByCreatedAtDesc(Long residentId);
+
+    /**
+     * Rentals whose time with the resident overlaps [from, to): picked up before the
+     * window ends, and either still out or returned after it starts. Backs the
+     * usage-hours report.
+     */
+    @Query("select b from Booking b join fetch b.cycle where b.pickedUpAt is not null "
+            + "and b.pickedUpAt < :to and (b.returnedAt is null or b.returnedAt > :from)")
+    List<Booking> findRentalsOverlapping(@Param("from") Instant from, @Param("to") Instant to);
 }

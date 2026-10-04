@@ -39,11 +39,11 @@ Module names refer to [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 **Goal: the mid-demo workflow — login → scan → book → passcode pickup/return → usage logged.**
 
-- [ ] **ID Verification Module:** integrated into booking; `matchesLogin` cross-check against smail identity; manual roll-number fallback after N failed scans
-- [ ] **Pickup/Return Module:** `confirmPickup` / `confirmReturn` with passcode; state-transition tests (wrong passcode = no change)
-- [ ] **Reporting Module (v1):** raw usage-hours-per-cycle
+- [x] **ID Verification Module:** integrated into booking; `matchesLogin` cross-check against smail identity; manual roll-number fallback after N failed scans
+- [x] **Pickup/Return Module:** `confirmPickup` / `confirmReturn` with passcode; state-transition tests (wrong passcode = no change)
+- [x] **Reporting Module (v1):** raw usage-hours-per-cycle
 - [ ] Mid-demo script rehearsed on a real phone + the guard flow acted out
-- [ ] Push before the demo + PROGRESS entry
+- [x] Push before the demo + PROGRESS entry
 
 ## Week 4 — 10–16 Oct
 

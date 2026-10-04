@@ -12,8 +12,8 @@ import net.sourceforge.tess4j.TesseractException;
 import net.sourceforge.tess4j.Word;
 
 /**
- * Week-2 prototype of the ID Verification pipeline: photo bytes in, extracted text
- * out. Not wired into booking yet (week 3), and it never writes the photo anywhere;
+ * The ID Verification pipeline: photo bytes in, extracted text out. Used by
+ * DefaultIdVerificationService at booking time. It never writes the photo anywhere;
  * the bytes only live for the duration of the call (ADR 0003).
  */
 public class IdCardScanner {

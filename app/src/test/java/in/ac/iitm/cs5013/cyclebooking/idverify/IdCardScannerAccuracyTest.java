@@ -22,8 +22,8 @@ import org.junit.jupiter.api.Test;
  */
 class IdCardScannerAccuracyTest {
 
-    /** Below this, week 3 will ask the resident to retake the photo. */
-    static final float MIN_CONFIDENCE = 70f;
+    /** Below this the booking page asks the resident to retake the photo. */
+    static final float MIN_CONFIDENCE = IdVerificationService.MIN_CONFIDENCE;
 
     private static final List<Card> CARDS = List.of(
             new Card("Test Resident A", "CE24B128", "Jamuna"),

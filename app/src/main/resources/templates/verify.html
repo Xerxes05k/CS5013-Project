@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Scan ID — Jamuna Hostel cycles</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header>
+    <h1>Book <span th:text="${cycle.label}">JAM-01</span></h1>
+    <p class="summary">Scan your IIT Madras ID card to confirm it's you.</p>
+</header>
+
+<main class="stack">
+    <p class="error" th:if="${error}" th:text="${error}">Could not read the card.</p>
+
+    <form th:action="@{/cycles/{id}/book(id=${cycle.id})}" method="post" enctype="multipart/form-data">
+        <label for="photo">Photo of your ID card</label>
+        <!-- capture="environment" opens the back camera directly on phones. -->
+        <input type="file" id="photo" name="photo" accept="image/*" capture="environment" required>
+        <p class="note">Card flat, filling the frame, in good light. The photo is read once and
+            never saved.</p>
+        <button type="submit">Scan and book</button>
+    </form>
+
+    <p class="note" th:if="${failedScans > 0 and !typedRollAllowed}"
+       th:text="|Attempt ${failedScans} of ${maxFailedScans}. After ${maxFailedScans} you can type your roll number instead.|">
+        Attempt 1 of 3.
+    </p>
+
+    <form th:if="${typedRollAllowed}" th:action="@{/cycles/{id}/book-typed(id=${cycle.id})}" method="post"
+          class="fallback">
+        <p>The card still isn't reading. Type your roll number instead. The guard will look at
+            your ID card at pickup.</p>
+        <label for="rollNumber">Roll number</label>
+        <input type="text" id="rollNumber" name="rollNumber" placeholder="CE24B128"
+               autocapitalize="characters" autocomplete="off" required>
+        <button type="submit">Book with roll number</button>
+    </form>
+
+    <p><a th:href="@{/cycles}">&larr; Back to cycles</a></p>
+</main>
+</body>
+</html>

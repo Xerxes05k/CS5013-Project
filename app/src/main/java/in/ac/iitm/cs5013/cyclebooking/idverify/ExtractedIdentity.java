@@ -6,4 +6,9 @@ package in.ac.iitm.cs5013.cyclebooking.idverify;
  * 0 when no roll number was found.
  */
 public record ExtractedIdentity(String name, String rollNumber, String hostel, float confidence) {
+
+    /** The result for a photo nothing could be read from. */
+    public static ExtractedIdentity unreadable() {
+        return new ExtractedIdentity(null, null, null, 0f);
+    }
 }

@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import in.ac.iitm.cs5013.cyclebooking.booking.BookingService;
+import in.ac.iitm.cs5013.cyclebooking.idverify.IdVerificationService;
 import in.ac.iitm.cs5013.cyclebooking.web.CycleController;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,9 @@ class SecurityConfigTest {
     private BookingService booking;
 
     @MockitoBean
+    private IdVerificationService idVerification;
+
+    @MockitoBean
     private AuthService auth;
 
     @MockitoBean
@@ -51,6 +55,8 @@ class SecurityConfigTest {
     @WithMockUser(username = "ce24b128@smail.iitm.ac.in", roles = "RESIDENT")
     void authenticatedResidentSeesTheAvailabilityPage() throws Exception {
         org.mockito.Mockito.when(booking.getAvailability()).thenReturn(List.of());
+        org.mockito.Mockito.when(auth.currentResident(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(new ResidentIdentity(1L, "CE24B128", "ce24b128@smail.iitm.ac.in"));
 
         mockMvc.perform(get("/cycles")).andExpect(status().isOk());
     }

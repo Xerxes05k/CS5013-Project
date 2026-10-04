@@ -65,8 +65,27 @@ button {
 .error { color: var(--repair); }
 .notice { color: var(--free); }
 
-.cycle form { margin: 0; }
-button.book { margin-top: 0; padding: .5rem .9rem; }
+a.book {
+    padding: .5rem .9rem;
+    border-radius: 6px;
+    background: #1b1f24;
+    color: #fff;
+    text-decoration: none;
+}
 
-footer { margin-top: 2rem; }
+.stack form { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1.5rem; }
+.stack label { font-size: .9rem; color: #57606a; margin-top: .6rem; }
+.stack form p { margin: 0; }
+.fallback { padding-top: 1rem; border-top: 1px solid var(--line); }
+
+.banner { padding: .75rem; border: 1px solid var(--line); border-radius: 6px; }
+.guard { padding: .75rem; border-left: 4px solid var(--busy); background: #fff8e5; }
+
+.report { width: 100%; border-collapse: collapse; }
+.report th, .report td { padding: .6rem .5rem; border-bottom: 1px solid var(--line); text-align: left; }
+.report .num { text-align: right; }
+.report tfoot th, .report tfoot td { font-weight: 600; border-bottom: 0; }
+
+footer { margin-top: 2rem; display: flex; justify-content: space-between; align-items: center; }
+footer form { margin: 0; }
 footer button { background: none; color: #57606a; padding: .5rem 0; }

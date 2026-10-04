@@ -2,6 +2,8 @@ package in.ac.iitm.cs5013.cyclebooking.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -39,6 +41,10 @@ public class Booking {
 
     private Instant returnedAt;
 
+    /** Null on bookings made before ID checks existed (week 2 and earlier). */
+    @Enumerated(EnumType.STRING)
+    private IdCheck idCheck;
+
     protected Booking() {
     }
 
@@ -46,6 +52,11 @@ public class Booking {
         this.resident = resident;
         this.cycle = cycle;
         this.createdAt = createdAt;
+    }
+
+    public Booking(Resident resident, Cycle cycle, Instant createdAt, IdCheck idCheck) {
+        this(resident, cycle, createdAt);
+        this.idCheck = idCheck;
     }
 
     /**
@@ -89,5 +100,9 @@ public class Booking {
 
     public void setReturnedAt(Instant returnedAt) {
         this.returnedAt = returnedAt;
+    }
+
+    public IdCheck getIdCheck() {
+        return idCheck;
     }
 }

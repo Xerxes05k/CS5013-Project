@@ -37,6 +37,11 @@ CS5013-Project/
     └── src/main/java/in/ac/iitm/cs5013/cyclebooking/
         ├── persistence/   entities + repositories
         ├── auth/          smail login (ADR 0004)
+        ├── idverify/      ID card OCR + check against the login
+        ├── rules/         24-hour hold, 3 per rolling week
+        ├── booking/       availability, booking, the race-safe lock
+        ├── transaction/   passcode pickup and return
+        ├── reporting/     usage hours per cycle
         └── web/           Thymeleaf controllers
 ```
 
