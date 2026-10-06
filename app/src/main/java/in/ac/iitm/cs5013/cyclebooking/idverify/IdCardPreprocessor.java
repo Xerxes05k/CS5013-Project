@@ -27,32 +27,56 @@ final class IdCardPreprocessor {
         nu.pattern.OpenCV.loadLocally();
     }
 
+    /** Width, in pixels, every photo is resized to before cleaning. */
+    static final double WORKING_WIDTH = 1600;
+
     private IdCardPreprocessor() {
     }
 
-    /** Returns a PNG of the cleaned-up card, ready for Tesseract. */
-    static byte[] clean(byte[] photo) {
+    /**
+     * Returns three PNG versions of the card for OCR to read: plain greyscale, greyscale
+     * with local contrast boosted, and fully cleaned to black text on white.
+     *
+     * No single version reads every photo. On a real ID card at 10 different photo
+     * sizes and JPEG qualities the fully cleaned version read the roll number 3 times,
+     * plain greyscale 8 times, and each one failed on photos the others read. So the
+     * scanner reads all three and takes a vote (IdCardScanner).
+     */
+    static List<byte[]> variants(byte[] photo) {
         Mat img = Imgcodecs.imdecode(new MatOfByte(photo), Imgcodecs.IMREAD_GRAYSCALE);
         if (img.empty()) {
             throw new IllegalArgumentException("Not an image");
         }
 
-        // Tesseract reads best with capital letters ~30 px tall; phone crops are smaller.
-        if (img.cols() < 1600) {
-            double scale = 1600.0 / img.cols();
-            Imgproc.resize(img, img, new Size(), scale, scale, Imgproc.INTER_CUBIC);
+        // Bring every photo to the same width, up or down. Tesseract reads best with
+        // capital letters ~30-50 px tall, and the blur and threshold sizes below are
+        // tuned for this scale. A full-resolution phone photo (~4000 px) left as it was
+        // gave letters so large the threshold hollowed them out.
+        double scale = WORKING_WIDTH / img.cols();
+        if (scale != 1.0) {
+            int interpolation = scale > 1 ? Imgproc.INTER_CUBIC : Imgproc.INTER_AREA;
+            Imgproc.resize(img, img, new Size(), scale, scale, interpolation);
         }
-
-        img = straighten(img);
-
-        // Denoise before boosting contrast; CLAHE would otherwise amplify the speckle
-        // of a dim photo along with the text.
-        Imgproc.medianBlur(img, img, 5);
+        Mat gray = straighten(img);
 
         // Local contrast equalisation: lifts text out of a glare patch or shadow without
         // blowing out the rest of the card the way a global brightness change would.
-        CLAHE clahe = Imgproc.createCLAHE(2.0, new Size(8, 8));
-        clahe.apply(img, img);
+        Mat contrast = new Mat();
+        Imgproc.createCLAHE(2.0, new Size(8, 8)).apply(gray, contrast);
+
+        return List.of(png(gray), png(contrast), png(binarise(gray)));
+    }
+
+    /**
+     * Black text on white. This is the week-2 pipeline, which does best on dim, glary
+     * or noisy photos.
+     */
+    private static Mat binarise(Mat gray) {
+        Mat img = new Mat();
+        // Denoise before boosting contrast; CLAHE would otherwise amplify the speckle
+        // of a dim photo along with the text.
+        Imgproc.medianBlur(gray, img, 5);
+        Imgproc.createCLAHE(2.0, new Size(8, 8)).apply(img, img);
 
         // Threshold each pixel against its own neighbourhood rather than one value for
         // the whole card, so text under glare or in shadow still comes out black.
@@ -60,7 +84,10 @@ final class IdCardPreprocessor {
                 Imgproc.THRESH_BINARY, 41, 15);
         // A second median pass removes the isolated dots the threshold leaves behind.
         Imgproc.medianBlur(img, img, 3);
+        return img;
+    }
 
+    private static byte[] png(Mat img) {
         MatOfByte png = new MatOfByte();
         Imgcodecs.imencode(".png", img, png);
         return png.toArray();

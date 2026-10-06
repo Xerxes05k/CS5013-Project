@@ -13,6 +13,12 @@ One entry per week, added before the Sunday push. Newest first. Each entry recor
 - **Reporting Module v1** (`reporting`): `getWeeklyUsageReport` gives hours out per cycle over the last 7 days. Usage runs from pickup to return. Rentals that straddle the window edge count only their hours inside it, and a cycle still out counts up to now. Page at `/report`; it shows cycles and hours only, no resident names.
 - Checked against a running server, with real OCR on synthetic card photos: someone else's card → "different roll number", attempt 1 of 3; low-light photo → "retake", attempt 2 of 3; own card → booked JAM-01; wrong passcode → refused, still awaiting pickup; right passcode → issued, due back in 24 h; return → JAM-01 free again; report lists 1 rental for JAM-01.
 - Tests: **39 across 11 classes, all green** (up from 21). New: 5 ID cross-check (own card, threshold edge, someone else's card, unreadable, non-image bytes), 4 more Booking (wrong card, low confidence, typed roll accepted and flagged, wrong typed roll), 6 Pickup/Return state transitions, 1 Reporting (seeded rentals → exactly 4.5 / 4.0 / 5.0 / 0 hours, including window clipping and a cycle still out), and 2 web tests for the 3-failed-scans gate.
+- **OCR fixed for a real ID card (6 Oct).** The first real card tried (Yashas's own, used with consent and not committed) was refused as unreadable, even though every character was read correctly. Three causes, all fixed:
+  - Tesseract's whole-word score was 42 because a speck was read as a full stop. The roll number is now scored by its weakest character.
+  - Full-size phone photos were never shrunk, so the letters were too big for the threshold step. Every photo is now resized to 1600 px wide.
+  - The week-2 clean-up alone read the real card at only 3 of 10 sizes and JPEG qualities. OCR now reads three versions (greyscale, contrast-boosted, cleaned) and takes a majority vote.
+
+  On that card the vote reads the roll correctly at **9 of 10** sizes and qualities. The tenth reads CE24B125, which does not match the login and is refused. A scan now takes ~2 s. Synthetic results: blur improved to 3/3 accepted, everything else unchanged, still 0 confidently wrong. Tests: 47, all green.
 
 **AI-assisted**
 - Claude Code wrote the week-3 code, tests, templates and this entry, and ran the end-to-end check above with curl against a local server. Choices it made that we should be able to defend in the viva:
@@ -23,7 +29,7 @@ One entry per week, added before the Sunday push. Newest first. Each entry recor
 
 **Blocked**
 - **Mid-demo rehearsal on a real phone + guard flow not done yet.** That PLAN item stays unticked until we actually run it before Fri 9 Oct.
-- Real-photo OCR accuracy is still unmeasured (week-2 blocker carries over): no consented real ID photos collected yet.
+- Real-photo OCR accuracy rests on **one** real card so far (9/10 above). The ≥10 consented real photos are still needed. That card also showed per-character confidence does not catch misreads (an 8 read as a 5 at 94+). The real guard against a wrong booking is the exact match against the logged-in roll number, not the confidence threshold.
 - No way yet to cancel a booking, and no expiry for a booking that is never picked up. Until then, a resident who books and doesn't show up stays blocked by "already holding". The architecture's pickup window covers this; it is not built.
 - The usage report is open to any logged-in resident. A GS-only role comes with the maintenance list in week 5.
 

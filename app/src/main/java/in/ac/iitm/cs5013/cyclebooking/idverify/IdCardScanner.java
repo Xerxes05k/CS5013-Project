@@ -1,10 +1,16 @@
 package in.ac.iitm.cs5013.cyclebooking.idverify;
 
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
 import net.sourceforge.tess4j.ITessAPI.TessPageIteratorLevel;
 import net.sourceforge.tess4j.Tesseract;
@@ -29,14 +35,38 @@ public class IdCardScanner {
         tesseract.setPageSegMode(6);
     }
 
+    /**
+     * Reads the three versions of the photo from {@link IdCardPreprocessor#variants}
+     * and returns the roll number most of them agree on; between equally common
+     * readings, the more confident one. Each version gets one vote, so a single version
+     * misreading a digit is outvoted by the two that read it right.
+     */
     public ExtractedIdentity scanCard(byte[] photo) {
-        BufferedImage cleaned = toImage(IdCardPreprocessor.clean(photo));
-        try {
-            String text = tesseract.doOCR(cleaned);
-            List<Word> words = tesseract.getWords(cleaned, TessPageIteratorLevel.RIL_WORD);
+        List<ExtractedIdentity> reads = new ArrayList<>();
+        for (byte[] version : IdCardPreprocessor.variants(photo)) {
+            reads.add(read(toImage(version)));
+        }
+        return vote(reads);
+    }
 
+    static ExtractedIdentity vote(List<ExtractedIdentity> reads) {
+        Map<String, Long> votes = reads.stream()
+                .filter(r -> r.rollNumber() != null)
+                .collect(Collectors.groupingBy(ExtractedIdentity::rollNumber, Collectors.counting()));
+        return reads.stream()
+                .filter(r -> r.rollNumber() != null)
+                .max(Comparator.<ExtractedIdentity>comparingLong(r -> votes.get(r.rollNumber()))
+                        .thenComparingDouble(ExtractedIdentity::confidence))
+                .orElse(ExtractedIdentity.unreadable());
+    }
+
+    private ExtractedIdentity read(BufferedImage card) {
+        try {
+            String text = tesseract.doOCR(card);
             String roll = IdCardTextParser.rollNumber(text).orElse(null);
-            float confidence = roll == null ? 0f : rollWordConfidence(words);
+            float confidence = roll == null ? 0f : rollConfidence(
+                    tesseract.getWords(card, TessPageIteratorLevel.RIL_WORD),
+                    tesseract.getWords(card, TessPageIteratorLevel.RIL_SYMBOL));
             return new ExtractedIdentity(
                     IdCardTextParser.name(text).orElse(null),
                     roll,
@@ -47,13 +77,36 @@ public class IdCardScanner {
         }
     }
 
-    /** Confidence of the word that looks like the roll number, i.e. the one we act on. */
-    private static float rollWordConfidence(List<Word> words) {
-        return (float) words.stream()
-                .filter(w -> IdCardTextParser.rollNumber(w.getText()).isPresent())
-                .mapToDouble(Word::getConfidence)
-                .max()
-                .orElse(0);
+    /**
+     * How sure OCR is of the roll number: the confidence of its weakest letter or digit.
+     *
+     * Not Tesseract's score for the whole word. On a real IIT Madras card that came out
+     * at 42 while every one of the 8 characters scored 98-99: a speck beside the number
+     * was read as a full stop, and whole-word scores run low for the card's bold serif
+     * font. We act on the 8 characters, so they are what gets scored, and one badly
+     * read character pulls the score down. It is not proof against misreads, though:
+     * on real cards OCR sometimes reads an 8 as a 5 at 95+. What stops a misread from
+     * booking is that the roll number must equal the logged-in resident's own.
+     */
+    static float rollConfidence(List<Word> words, List<Word> symbols) {
+        double best = 0;
+        for (Word word : words) {
+            if (IdCardTextParser.rollNumber(word.getText()).isEmpty()) {
+                continue;
+            }
+            double weakest = symbols.stream()
+                    .filter(c -> c.getText().length() == 1 && Character.isLetterOrDigit(c.getText().charAt(0)))
+                    .filter(c -> word.getBoundingBox().contains(centre(c.getBoundingBox())))
+                    .mapToDouble(Word::getConfidence)
+                    .min()
+                    .orElse(word.getConfidence());
+            best = Math.max(best, weakest);
+        }
+        return (float) best;
+    }
+
+    private static Point centre(Rectangle r) {
+        return new Point((int) r.getCenterX(), (int) r.getCenterY());
     }
 
     private static BufferedImage toImage(byte[] png) {
