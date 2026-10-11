@@ -4,6 +4,27 @@ One entry per week, added before the Sunday push. Newest first. Each entry recor
 
 ---
 
+## Week 4 — 11 Oct 2026
+
+**Shipped**
+- No commits this week (10–16 Oct so far). The last code change was the OCR fix for real ID cards on 6 Oct, and it is already recorded under Week 3.
+- Test suite re-run for this entry: **47 tests, all green**.
+
+**AI-assisted**
+- Claude Code generated this weekly log entry from the git history as part of the scheduled Sunday push routine. No application code was written this week.
+
+**Blocked**
+- The repo has no record of the mid-demo (Fri 9 Oct): no feedback list and no fixes. The "fix whatever broke in the mid-demo" item can't start until the feedback is written down here.
+- Carried over from Week 3: the mid-demo rehearsal on a real phone is not recorded as done. The ≥10 consented real ID photos for an accuracy run are still not collected. There is still no booking cancel or pickup-window expiry.
+
+**Next (week 5)**
+- CommentClassifier: Apache OpenNLP model trained on the labelled set, with precision/recall recorded here.
+- `MaintenanceService.submitComment` → flags; the raw comment is always shown next to its flags (ADR 0003).
+- Reporting Module v2: a maintenance list combining guard notes and auto-flags.
+- Still open from week 4: log the mid-demo feedback, build the Maintenance Comment Module v1, and start the labelled phrase dataset. The classifier depends on these.
+
+---
+
 ## Week 3 — 4 Oct 2026
 
 **Shipped**
