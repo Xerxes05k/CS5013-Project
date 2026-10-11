@@ -44,6 +44,10 @@ public class MaintenanceFlag {
 
     private Instant resolvedAt;
 
+    /** The guard's own words, for a GUARD flag. Null for flags raised from a comment. */
+    @Column(length = 500)
+    private String note;
+
     protected MaintenanceFlag() {
     }
 
@@ -53,6 +57,12 @@ public class MaintenanceFlag {
         this.label = label;
         this.source = source;
         this.createdAt = createdAt;
+    }
+
+    public MaintenanceFlag(Cycle cycle, Comment comment, String label, FlagSource source, Instant createdAt,
+            String note) {
+        this(cycle, comment, label, source, createdAt);
+        this.note = note;
     }
 
     public Long getId() {
@@ -81,6 +91,10 @@ public class MaintenanceFlag {
 
     public Instant getResolvedAt() {
         return resolvedAt;
+    }
+
+    public String getNote() {
+        return note;
     }
 
     public void setResolvedAt(Instant resolvedAt) {

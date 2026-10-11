@@ -7,21 +7,30 @@ One entry per week, added before the Sunday push. Newest first. Each entry recor
 ## Week 4 — 11 Oct 2026
 
 **Shipped**
-- No commits this week (10–16 Oct so far). The last code change was the OCR fix for real ID cards on 6 Oct, and it is already recorded under Week 3.
-- Test suite re-run for this entry: **47 tests, all green**.
+- **Mid-demo moved to Mon 12 Oct** (PLAN.md updated). This week's build was done the day before, so it adds features without touching the booking or OCR paths.
+- **Guard's condition note at return** (`transaction`, `maintenance`). `confirmReturn` takes its third argument, `guardConditionNote`. The return form has an optional box: the resident asks the guard whether anything is wrong and types what the guard says. A non-blank note becomes a `GUARD` flag on the cycle, with the guard's words in the new `MaintenanceFlag.note` column. It is saved in the same transaction as the return, so either both are saved or neither is. A note over 500 characters is refused before anything changes, the same way a wrong passcode is.
+- **Maintenance Comment Module v1** (`maintenance`): `MaintenanceService.submitComment` stores the resident's comment trimmed but otherwise as written. It accepts one comment per booking, only after the return, and refuses blank or over-2000-character text. It raises no flags yet; that is the week-5 classifier. After a confirmed return the resident lands on a new **How was JAM-xx?** page with a comment box and a "Nothing to report, skip" button. The booking id for the comment comes from the session set by the return, never from the form.
+- **Labelled phrase dataset started:** `app/src/main/resources/maintenance/labelled-comments.tsv` has **120 rows** across 8 issue labels (chain, brakes, tyre, seat, pedal, handlebar, lock, bell) plus `none`. Every label has ≥ 10 examples, and 9 rows carry two labels. All rows are marked `source=seed`: written for this file, not collected from residents.
+- Checked against a running server on a copy of the week-3 demo database: the new `note` column was added to the existing table on startup. Pickup, then return with the note "front brake loose", gave a GUARD flag on JAM-02. An empty comment was refused, and "chain keeps slipping off" was stored against the returned booking. The comment page then closes. The return and comment screens were also checked at phone width (375 px), along with the skip button.
+- Tests: **61 across 16 classes, all green** (up from 47). New: 6 Maintenance (raw text stored and no flags yet; refused before return; second comment refused; blank and too long refused; guard note → GUARD flag; blank note → nothing), 3 more Pickup/Return (guard note raises a flag; blank note raises none; too-long note changes nothing), 3 web tests for the comment box (the note reaches `confirmReturn`; the comment goes to the booking just returned; posting a comment without a return, even with a forged `bookingId`, does nothing), and 2 dataset checks (≥ 100 rows, known labels, ≥ 10 per label, no duplicates).
 
 **AI-assisted**
-- Claude Code generated this weekly log entry from the git history as part of the scheduled Sunday push routine. No application code was written this week.
+- Claude Code wrote the week-4 code, tests and templates, wrote the 120 seed phrases, and updated this entry, ARCHITECTURE.md and PLAN.md. Choices we should be able to defend in the viva:
+  - Any non-blank guard note becomes a flag straight away, without waiting for the classifier. When the guard says something is wrong, the GS should see it whatever the words are.
+  - The guard note does **not** move the cycle to `UNDER_REPAIR`. Nothing can clear that state yet (GS tools come in week 5), so a mistyped note would take a cycle out of the pool. The GS decides.
+  - The seed phrases were written by the assistant, so classifier numbers measured on them will be optimistic. Week 5 should report precision/recall separately on `pilot` rows once we have them.
+- The original Week 4 entry, written earlier today by the scheduled push routine, said "no commits this week". That is replaced by this one.
 
 **Blocked**
-- The repo has no record of the mid-demo (Fri 9 Oct): no feedback list and no fixes. The "fix whatever broke in the mid-demo" item can't start until the feedback is written down here.
-- Carried over from Week 3: the mid-demo rehearsal on a real phone is not recorded as done. The ≥10 consented real ID photos for an accuracy run are still not collected. There is still no booking cancel or pickup-window expiry.
+- The mid-demo hasn't happened yet (Mon 12 Oct), so "fix whatever broke" stays unticked until there is feedback to log.
+- Carried over: the mid-demo rehearsal on a real phone, ≥ 10 consented real ID photos for an accuracy run, and booking cancel / pickup-window expiry. A no-show still blocks the resident; for the demo, finish each booking with pickup and return.
+- The comment box is a session gate. If the resident closes the page, the chance to comment on that rental is lost. That is acceptable for v1.
 
 **Next (week 5)**
-- CommentClassifier: Apache OpenNLP model trained on the labelled set, with precision/recall recorded here.
-- `MaintenanceService.submitComment` → flags; the raw comment is always shown next to its flags (ADR 0003).
-- Reporting Module v2: a maintenance list combining guard notes and auto-flags.
-- Still open from week 4: log the mid-demo feedback, build the Maintenance Comment Module v1, and start the labelled phrase dataset. The classifier depends on these.
+- Log the mid-demo feedback here and fix what broke.
+- CommentClassifier: Apache OpenNLP model trained on `labelled-comments.tsv`, with precision/recall recorded here; `submitComment` then returns real flags.
+- Reporting v2: maintenance list combining guard notes and auto-flags, always next to the raw text (ADR 0003); GS-only role; GS clears `UNDER_REPAIR`.
+- Booking cancel / pickup-window expiry.
 
 ---
 

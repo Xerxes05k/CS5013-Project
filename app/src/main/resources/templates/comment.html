@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>How was the cycle? — Jamuna Hostel cycles</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header>
+    <h1>How was <span th:text="${returned.cycleLabel}">JAM-01</span>?</h1>
+    <p class="summary">Returned. If anything was wrong with the cycle, tell the GS here.</p>
+</header>
+
+<main class="stack">
+    <p class="notice" th:if="${notice}" th:text="${notice}">Return confirmed.</p>
+    <p class="error" th:if="${error}" th:text="${error}">The comment is empty.</p>
+
+    <form th:action="@{/rental/comment}" method="post">
+        <label for="comment-text">Comment</label>
+        <textarea id="comment-text" name="text" rows="4" th:maxlength="${maxLength}" required
+                  placeholder="e.g. chain keeps slipping off, seat is loose"></textarea>
+        <p class="note">The GS reads your words as written.</p>
+        <button type="submit">Send comment</button>
+    </form>
+
+    <form class="skip" th:action="@{/rental/comment/skip}" method="post">
+        <button type="submit">Nothing to report, skip</button>
+    </form>
+</main>
+</body>
+</html>

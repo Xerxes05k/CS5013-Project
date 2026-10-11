@@ -1,5 +1,6 @@
 package in.ac.iitm.cs5013.cyclebooking.transaction;
 
+import in.ac.iitm.cs5013.cyclebooking.maintenance.MaintenanceService;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Booking;
 import in.ac.iitm.cs5013.cyclebooking.persistence.BookingRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Cycle;
@@ -20,11 +21,14 @@ class DefaultTransactionService implements TransactionService {
 
     private final BookingRepository bookings;
     private final PasswordEncoder passwordEncoder;
+    private final MaintenanceService maintenance;
     private final Clock clock;
 
-    DefaultTransactionService(BookingRepository bookings, PasswordEncoder passwordEncoder, Clock clock) {
+    DefaultTransactionService(BookingRepository bookings, PasswordEncoder passwordEncoder,
+            MaintenanceService maintenance, Clock clock) {
         this.bookings = bookings;
         this.passwordEncoder = passwordEncoder;
+        this.maintenance = maintenance;
         this.clock = clock;
     }
 
@@ -45,7 +49,7 @@ class DefaultTransactionService implements TransactionService {
 
     @Override
     @Transactional
-    public CycleState confirmReturn(long bookingId, String passcode) {
+    public CycleState confirmReturn(long bookingId, String passcode, String guardConditionNote) {
         Booking booking = find(bookingId);
         Cycle cycle = booking.getCycle();
         if (booking.getPickedUpAt() == null) {
@@ -54,12 +58,18 @@ class DefaultTransactionService implements TransactionService {
         if (booking.getReturnedAt() != null || cycle.getState() != CycleState.ISSUED) {
             throw new TransactionRejectedException("This cycle has already been returned.");
         }
+        if (guardConditionNote != null && guardConditionNote.strip().length() > MaintenanceService.MAX_GUARD_NOTE_LENGTH) {
+            throw new TransactionRejectedException("The guard's note is too long. Keep it under "
+                    + MaintenanceService.MAX_GUARD_NOTE_LENGTH + " characters.");
+        }
         checkPasscode(booking, passcode);
 
         Instant now = clock.instant();
         booking.setReturnedAt(now);
         cycle.setLastReturnedAt(now);
         cycle.setState(CycleState.AVAILABLE);
+        // Same transaction: if saving the note fails, the return is undone too.
+        maintenance.recordGuardNote(bookingId, guardConditionNote);
         return cycle.getState();
     }
 

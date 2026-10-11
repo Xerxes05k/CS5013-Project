@@ -45,7 +45,7 @@ h1 { font-size: 1.25rem; margin: 0 0 .25rem; }
 .login form { display: flex; flex-direction: column; gap: .4rem; }
 .login label { font-size: .9rem; color: #57606a; margin-top: .6rem; }
 
-input {
+input, textarea {
     padding: .7rem;
     font-size: 1rem;
     border: 1px solid var(--line);
@@ -76,6 +76,9 @@ a.book {
 .stack form { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1.5rem; }
 .stack label { font-size: .9rem; color: #57606a; margin-top: .6rem; }
 .stack form p { margin: 0; }
+textarea { font-family: inherit; resize: vertical; }
+.stack form.skip { margin-top: -1rem; }
+.skip button { background: none; color: #57606a; margin-top: 0; }
 .fallback { padding-top: 1rem; border-top: 1px solid var(--line); }
 
 .banner { padding: .75rem; border: 1px solid var(--line); border-radius: 6px; }

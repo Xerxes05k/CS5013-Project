@@ -8,7 +8,9 @@ import in.ac.iitm.cs5013.cyclebooking.persistence.BookingRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Cycle;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
+import in.ac.iitm.cs5013.cyclebooking.persistence.FlagSource;
 import in.ac.iitm.cs5013.cyclebooking.persistence.IdCheck;
+import in.ac.iitm.cs5013.cyclebooking.persistence.MaintenanceFlagRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Resident;
 import in.ac.iitm.cs5013.cyclebooking.persistence.ResidentRepository;
 import java.time.Instant;
@@ -41,6 +43,9 @@ class DefaultTransactionServiceTest {
     private BookingRepository bookings;
 
     @Autowired
+    private MaintenanceFlagRepository flags;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private long bookingId;
@@ -60,6 +65,7 @@ class DefaultTransactionServiceTest {
 
     @AfterEach
     void cleanUp() {
+        flags.deleteAll();
         bookings.deleteAll();
         cycles.deleteAll();
         residents.deleteAll();
@@ -103,7 +109,7 @@ class DefaultTransactionServiceTest {
 
     @Test
     void confirmReturn_beforePickupIsRefused() {
-        assertThatThrownBy(() -> transactions.confirmReturn(bookingId, PASSCODE))
+        assertThatThrownBy(() -> transactions.confirmReturn(bookingId, PASSCODE, ""))
                 .isInstanceOf(TransactionRejectedException.class)
                 .hasMessageContaining("not been picked up");
 
@@ -115,23 +121,59 @@ class DefaultTransactionServiceTest {
     void confirmReturn_withWrongPasscodeLeavesCycleIssued() {
         transactions.confirmPickup(bookingId, PASSCODE);
 
-        assertThatThrownBy(() -> transactions.confirmReturn(bookingId, "wrong"))
+        assertThatThrownBy(() -> transactions.confirmReturn(bookingId, "wrong", "front brake loose"))
                 .isInstanceOf(TransactionRejectedException.class);
 
         assertThat(cycleState()).isEqualTo(CycleState.ISSUED);
         assertThat(booking().getReturnedAt()).isNull();
+        assertThat(flags.findByCycleId(cycleId)).isEmpty();
     }
 
     @Test
     void confirmReturn_withCorrectPasscodeMakesCycleAvailableAgain() {
         transactions.confirmPickup(bookingId, PASSCODE);
 
-        CycleState state = transactions.confirmReturn(bookingId, PASSCODE);
+        CycleState state = transactions.confirmReturn(bookingId, PASSCODE, "");
 
         assertThat(state).isEqualTo(CycleState.AVAILABLE);
         Cycle cycle = cycles.findById(cycleId).orElseThrow();
         assertThat(cycle.getState()).isEqualTo(CycleState.AVAILABLE);
         assertThat(cycle.getLastReturnedAt()).isNotNull();
         assertThat(booking().getReturnedAt()).isEqualTo(cycle.getLastReturnedAt());
+    }
+
+    @Test
+    void confirmReturn_withGuardNoteRaisesGuardFlagOnTheCycle() {
+        transactions.confirmPickup(bookingId, PASSCODE);
+
+        transactions.confirmReturn(bookingId, PASSCODE, "  front brake loose ");
+
+        assertThat(cycleState()).isEqualTo(CycleState.AVAILABLE);
+        assertThat(flags.findByCycleId(cycleId)).singleElement().satisfies(flag -> {
+            assertThat(flag.getSource()).isEqualTo(FlagSource.GUARD);
+            assertThat(flag.getNote()).isEqualTo("front brake loose");
+            assertThat(flag.getComment()).isNull();
+        });
+    }
+
+    @Test
+    void confirmReturn_withBlankGuardNoteRaisesNoFlag() {
+        transactions.confirmPickup(bookingId, PASSCODE);
+
+        transactions.confirmReturn(bookingId, PASSCODE, "   ");
+
+        assertThat(flags.findByCycleId(cycleId)).isEmpty();
+    }
+
+    @Test
+    void confirmReturn_withTooLongGuardNoteChangesNothing() {
+        transactions.confirmPickup(bookingId, PASSCODE);
+
+        assertThatThrownBy(() -> transactions.confirmReturn(bookingId, PASSCODE, "x".repeat(501)))
+                .isInstanceOf(TransactionRejectedException.class)
+                .hasMessageContaining("too long");
+
+        assertThat(cycleState()).isEqualTo(CycleState.ISSUED);
+        assertThat(flags.findByCycleId(cycleId)).isEmpty();
     }
 }

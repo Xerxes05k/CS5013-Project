@@ -1,0 +1,125 @@
+# Labelled maintenance comments for the CommentClassifier (week 5).
+# Columns, tab-separated: labels (comma-separated; "none" = nothing wrong), text, source.
+# source "seed" = written by the team in week 4 to cover the 8 labels before real data exists.
+# Real resident comments from the pilot are added with source "pilot". Never add names or roll numbers.
+labels	text	source
+chain	chain keeps slipping off	seed
+chain	chain came off twice on the way to class	seed
+chain	chain is rusty and makes a grinding noise	seed
+chain	chain is too loose, drops when I pedal hard	seed
+chain	chain makes a clicking sound every rotation	seed
+chain	chain jammed near the back wheel	seed
+chain	chain needs oil, very squeaky	seed
+chain	chain utar gaya twice	seed
+chain	chain skips when going uphill	seed
+chain	chain cover broken, chain catches my pant	seed
+chain	chain rubbing against the frame	seed
+chain	chain snapped halfway, had to walk back	seed
+brakes	front brake doesn't work at all	seed
+brakes	brakes are very weak, took ages to stop	seed
+brakes	back brake squeals loudly	seed
+brakes	brake lever is loose	seed
+brakes	rear brake is jammed, wheel won't turn freely	seed
+brakes	brake pads worn out	seed
+brakes	brake wire is hanging out	seed
+brakes	brakes not working properly, dangerous	seed
+brakes	had to use my feet to stop, no brakes	seed
+brakes	left brake lever bent	seed
+brakes	brake rubbing on the rim the whole time	seed
+brakes	brake kaam nahi kar raha	seed
+tyre	rear tyre is flat	seed
+tyre	front tyre puncture	seed
+tyre	tyre has very little air	seed
+tyre	back wheel puncture hai	seed
+tyre	tyre is bald, slips on wet road	seed
+tyre	air kam hai tyre mein	seed
+tyre	wheel is wobbly, rim seems bent	seed
+tyre	tyre went flat halfway	seed
+tyre	front wheel wobbles a lot	seed
+tyre	tube is leaking slowly	seed
+tyre	valve cap missing and tyre losing air	seed
+tyre	needs air in both tyres	seed
+tyre	spoke broken on back wheel	seed
+seat	seat is loose and rotates	seed
+seat	seat too low and won't adjust	seed
+seat	saddle is torn	seed
+seat	seat cover ripped, foam coming out	seed
+seat	seat height clamp is broken	seed
+seat	seat keeps sliding down	seed
+seat	saddle tilts backwards	seed
+seat	seat is wobbly	seed
+seat	seat post stuck, can't raise it	seed
+seat	seat bolt missing	seed
+seat	gaddi loose hai	seed
+seat	seat is cracked and pinches	seed
+pedal	left pedal is broken	seed
+pedal	pedal is loose and wobbles	seed
+pedal	right pedal fell off	seed
+pedal	pedal is bent, hits my foot	seed
+pedal	pedal crank is loose	seed
+pedal	pedal makes a creaking noise	seed
+pedal	pedal rubber missing, just the metal rod	seed
+pedal	pedal arm wobbles	seed
+pedal	pedals are very stiff	seed
+pedal	one pedal has a crack	seed
+pedal	pedal toot gaya	seed
+pedal	pedal slips off my shoe, no grip	seed
+handlebar	handlebar is loose, turns without the wheel	seed
+handlebar	handlebar is crooked	seed
+handlebar	handle grip missing on the left side	seed
+handlebar	handlebar not straight with the front wheel	seed
+handlebar	handle grips are torn	seed
+handlebar	steering feels loose	seed
+handlebar	handlebar drops when I lean on it	seed
+handlebar	handle is tilted to one side	seed
+handlebar	handlebar rattles over bumps	seed
+handlebar	right grip slides off	seed
+handlebar	handle tedha hai	seed
+handlebar	steering is stiff	seed
+lock	lock doesn't open with the key	seed
+lock	key is stuck in the lock	seed
+lock	lock is broken, can't secure the cycle	seed
+lock	lock jammed, guard had to help	seed
+lock	lock is rusty and hard to turn	seed
+lock	lock missing	seed
+lock	key doesn't fit the lock	seed
+lock	lock opens without the key	seed
+lock	lock is bent and rubs the wheel	seed
+lock	chain lock missing	seed
+lock	lock khul nahi raha	seed
+lock	lock catches on the spokes	seed
+bell	bell doesn't ring	seed
+bell	bell missing	seed
+bell	bell is loose and rattles	seed
+bell	bell rusted	seed
+bell	no bell, could not warn people	seed
+bell	bell lever is broken	seed
+bell	bell rings by itself on bumps	seed
+bell	bell stuck	seed
+bell	bell is cracked	seed
+bell	ghanti kaam nahi karti	seed
+none	cycle is totally fine	seed
+none	everything works, smooth ride	seed
+none	no issues	seed
+none	all good	seed
+none	great condition	seed
+none	rode fine, no problems	seed
+none	works well thanks	seed
+none	smooth, nothing to report	seed
+none	sab theek hai	seed
+none	good cycle	seed
+none	fine	seed
+none	no complaints	seed
+none	ok	seed
+none	nice ride today	seed
+none	the cycle was clean and worked well	seed
+brakes,tyre	brakes weak and rear tyre is flat	seed
+brakes,tyre	flat tyre and the brakes squeal	seed
+chain,seat	chain slips and the seat is loose	seed
+seat,bell	seat torn, bell missing	seed
+handlebar,brakes	handlebar loose and front brake not working	seed
+pedal,chain	pedal broken, chain also rusty	seed
+tyre,lock	flat tyre and lock was jammed	seed
+bell	everything ok except the bell	seed
+seat	fine but the seat is a bit low	seed
+brakes	rides fine but brakes squeak	seed

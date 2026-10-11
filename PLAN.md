@@ -4,7 +4,7 @@ Week-by-week plan from the design doc to the final submission. Each week ends wi
 
 Module names refer to [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-**Fixed dates:** mid-demo **Fri 9 Oct 2026**, final submission **Fri 6 Nov 2026**.
+**Fixed dates:** mid-demo **Mon 12 Oct 2026** (moved from Fri 9 Oct), final submission **Fri 6 Nov 2026**.
 
 ---
 
@@ -50,8 +50,8 @@ Module names refer to [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 **Goal: absorb mid-demo feedback; start the maintenance side.**
 
 - [ ] Fix whatever broke in the mid-demo (log each item here)
-- [ ] **Maintenance Comment Module (v1):** post-return comment box, stored; guard condition note at check-in
-- [ ] Start the labeled phrase dataset for the classifier (target ≥100 comments across ~8 issue labels)
+- [x] **Maintenance Comment Module (v1):** post-return comment box, stored; guard condition note at check-in
+- [x] Start the labeled phrase dataset for the classifier (target ≥100 comments across ~8 issue labels)
 - [ ] Sunday push + PROGRESS entry
 
 ## Week 5 — 17–23 Oct

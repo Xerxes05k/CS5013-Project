@@ -16,8 +16,9 @@ public interface TransactionService {
     CycleState confirmPickup(long bookingId, String passcode);
 
     /**
-     * ISSUED -> AVAILABLE. Returns the cycle's new state. The guard's condition note
-     * joins this call in week 4, with the Maintenance Module.
+     * ISSUED -> AVAILABLE. Returns the cycle's new state. The guard looks the cycle
+     * over and the resident types what the guard says into {@code guardConditionNote};
+     * blank means nothing wrong. A non-blank note is passed to the Maintenance Module.
      */
-    CycleState confirmReturn(long bookingId, String passcode);
+    CycleState confirmReturn(long bookingId, String passcode, String guardConditionNote);
 }
