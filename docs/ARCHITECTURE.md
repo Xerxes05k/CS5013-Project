@@ -119,13 +119,15 @@ A booking that isn't picked up within its window returns the cycle to `AVAILABLE
 
 ## Data model (entities)
 
+Full schema, with the ER diagram, column types and constraints, is in [SCHEMA.md](SCHEMA.md). Request-by-request flowcharts are in [FLOWS.md](FLOWS.md).
+
 | Entity | Key fields |
 |---|---|
 | `Resident` | id, rollNumber, name, hostel, smailAddress, passcodeHash |
-| `Cycle` | id, label, state (`CycleState`), lastReturnedAt |
-| `Booking` | id, resident, cycle, createdAt, pickedUpAt, returnedAt, overdue |
+| `Cycle` | id, label, state (`CycleState`), lastReturnedAt, version |
+| `Booking` | id, resident, cycle, createdAt, pickedUpAt, returnedAt, idCheck (`CARD_SCAN` / `TYPED_ROLL`). `overdue` is computed from the timestamps, not stored |
 | `Comment` | id, booking, text, createdAt |
-| `MaintenanceFlag` | id, cycle, comment (nullable), label, source (`COMMENT` / `GUARD`), resolvedAt |
+| `MaintenanceFlag` | id, cycle, comment (nullable), label, source (`COMMENT` / `GUARD`), note, createdAt, resolvedAt |
 
 ## Test plan (one per module)
 
