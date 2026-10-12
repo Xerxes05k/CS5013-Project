@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# The Sunday routine: pull, regenerate the repo map, commit everything, push.
+# The Sunday routine: rebase on main, regenerate the repo map, commit everything,
+# push the branch. Run it on a docs/week-N branch; the PR into main is opened and
+# merged by the other person (PLAN.md, "Team and work split").
 #
 #   scripts/weekly-update.sh <week-number> "<one-line summary>"
 #
@@ -19,7 +21,13 @@ if ! grep -q "^## Week ${WEEK} " docs/PROGRESS.md; then
   exit 1
 fi
 
-git pull --rebase --autostash
+# Changes reach main only through a reviewed pull request.
+if [ "$(git branch --show-current)" = "main" ]; then
+  echo "On main. Run this on a branch: git switch -c docs/week-${WEEK}" >&2
+  exit 1
+fi
+
+git pull --rebase --autostash origin main
 scripts/repo-map.sh
 
 # Tests must pass before a weekly push once the app exists.
@@ -34,5 +42,6 @@ if git diff --cached --quiet; then
 fi
 
 git commit -m "Week ${WEEK}: ${SUMMARY}" -m "See docs/PROGRESS.md for the weekly entry."
-git push
-echo "pushed week ${WEEK}"
+# -u: a new branch has no upstream yet, so a bare `git push` would fail.
+git push -u origin HEAD
+echo "pushed week ${WEEK} on $(git branch --show-current); open a PR into main"
