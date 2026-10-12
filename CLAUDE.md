@@ -32,7 +32,9 @@ scripts/weekly-update.sh             # weekly commit + push routine
 - Package root: `in.ac.iitm.cs5013.cyclebooking`. One sub-package per module: `auth`, `idverify`, `rules`, `booking`, `transaction`, `maintenance`, `reporting`, `persistence`.
 - Each module exposes one `*Service` interface; implementations are package-private where possible.
 - Tests live in `app/src/test/java/...` mirroring main. Every module has at least one test (rubric requirement). Name tests after behaviour: `createBooking_rejectsSecondConcurrentBookingOfSameCycle`.
-- Commit messages: short imperative subject, body says *why*. Weekly pushes use `Week N: <summary>`.
+- Commit messages: short imperative subject, body says *why*. The Sunday log commit uses `Week N: <summary>`.
+- Workflow (from week 4): one branch per feature, never a whole module at once (`be/…`, `fe/…`, `docs/…`). Make short commits, one step each (interface → query → implementation → test → page), each compiling and passing tests. Commit after each step; never one large commit at the end. PR into `main` reviewed and merged by the other person. Never commit or push to `main` directly. Owners and the backend/frontend split are in `PLAN.md` → "Team and work split".
+- The `*Service` interfaces and the records they return are the contract between backend and frontend. If you change one, update the controllers that use it in the same PR and say so in the PR description.
 - Don't store ID card photos. Only the OCR-extracted text (name, roll number, hostel) is persisted. This is a privacy commitment in the proposal.
 - SQLite file `app/data/cyclebooking.db` is gitignored. Seed/test data goes in `app/src/main/resources/data.sql`.
 
