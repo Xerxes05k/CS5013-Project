@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Shared page chrome. Each page includes these with th:replace, so the tabs and the
+     log-out button are written once. See docs/UI.md §1. -->
+
+<div th:fragment="topbar" class="topbar">
+    <span>Jamuna cycles</span>
+    <form th:action="@{/logout}" method="post">
+        <button type="submit">Log out</button>
+    </form>
+</div>
+
+<!-- active: which tab to highlight, "cycles", "rental" or "report".
+     hasOpenRental comes from NavigationAdvice on every page. -->
+<nav th:fragment="tabs(active)" class="tabs" aria-label="Sections">
+    <a class="tab" th:classappend="${active == 'cycles'} ? 'active'" th:href="@{/cycles}"
+       th:aria-current="${active == 'cycles'} ? 'page'">Cycles</a>
+    <a class="tab" th:classappend="${active == 'rental'} ? 'active'" th:href="@{/rental}"
+       th:aria-current="${active == 'rental'} ? 'page'">My cycle<span class="tab-dot" th:if="${hasOpenRental}"></span><span
+            class="sr-only" th:if="${hasOpenRental}"> (you have a cycle)</span></a>
+    <a class="tab" th:classappend="${active == 'report'} ? 'active'" th:href="@{/report}"
+       th:aria-current="${active == 'report'} ? 'page'">Report</a>
+</nav>
+
+</body>
+</html>

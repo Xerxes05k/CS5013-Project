@@ -92,3 +92,50 @@ textarea { font-family: inherit; resize: vertical; }
 footer { margin-top: 2rem; display: flex; justify-content: space-between; align-items: center; }
 footer form { margin: 0; }
 footer button { background: none; color: #57606a; padding: .5rem 0; }
+
+/* Top bar: hostel name and log out, on every page after login. */
+.topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; font-weight: 600; }
+.topbar form { margin: 0; }
+.topbar button { margin: 0; padding: .4rem 0; background: none; color: #57606a; font-weight: 400; }
+
+/* Tab bar (docs/UI.md §1). On a phone it sits at the bottom of the screen, where the
+   thumb reaches it; body padding keeps the last row of a page from hiding under it. */
+body { padding-bottom: 5rem; }
+.tabs {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    background: #fff;
+    border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+.tab {
+    flex: 1;
+    min-height: 44px;
+    padding: .8rem .25rem;
+    text-align: center;
+    color: #57606a;
+    text-decoration: none;
+    border-top: 3px solid transparent;
+}
+.tab.active { color: #1b1f24; font-weight: 600; border-top-color: #1b1f24; }
+.tab-dot {
+    display: inline-block;
+    width: .5rem;
+    height: .5rem;
+    margin-left: .3rem;
+    border-radius: 50%;
+    background: var(--free);
+    vertical-align: middle;
+}
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* On a wider screen the tabs move to the top, under the top bar. */
+@media (min-width: 720px) {
+    body { padding-bottom: 1rem; }
+    .tabs { position: static; margin-bottom: 1rem; border-top: 0; border-bottom: 1px solid var(--line); padding-bottom: 0; }
+    .tab { border-top: 0; border-bottom: 3px solid transparent; }
+    .tab.active { border-bottom-color: #1b1f24; }
+}
