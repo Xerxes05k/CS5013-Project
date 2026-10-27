@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import in.ac.iitm.cs5013.cyclebooking.auth.ResidentIdentity;
 import in.ac.iitm.cs5013.cyclebooking.idverify.ExtractedIdentity;
+import in.ac.iitm.cs5013.cyclebooking.persistence.Booking;
 import in.ac.iitm.cs5013.cyclebooking.persistence.BookingRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Cycle;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleRepository;
@@ -12,6 +13,8 @@ import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
 import in.ac.iitm.cs5013.cyclebooking.persistence.IdCheck;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Resident;
 import in.ac.iitm.cs5013.cyclebooking.persistence.ResidentRepository;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -186,5 +189,29 @@ class DefaultBookingServiceTest {
         assertThat(rejected).isEqualTo(1);
         assertThat(bookings.count()).isEqualTo(1);
         assertThat(cycles.findById(cycleId).orElseThrow().getState()).isEqualTo(CycleState.BOOKED);
+    }
+
+    @Test
+    void history_listsNewestFirstWithHoursHeldAndLateReturns() {
+        Resident r = resident("CE24B061");
+        Cycle c = cycles.save(new Cycle("HIST-01"));
+        Instant now = Instant.now();
+        rental(r, c, now.minus(Duration.ofDays(3)), Duration.ofHours(2));   // returned on time
+        rental(r, c, now.minus(Duration.ofDays(2)), Duration.ofHours(26));  // returned late
+        bookings.save(new Booking(r, c, now.minus(Duration.ofHours(1))));   // booked, not picked up
+
+        List<HistoryEntry> history = bookingService.history(r.getId());
+
+        assertThat(history).extracting(HistoryEntry::status).containsExactly("Booked", "Returned", "Returned");
+        assertThat(history).extracting(HistoryEntry::hours).containsExactly(0.0, 26.0, 2.0);
+        assertThat(history).extracting(HistoryEntry::late).containsExactly(false, true, false);
+    }
+
+    /** A finished rental: booked and picked up at the same moment, returned after held. */
+    private void rental(Resident r, Cycle c, Instant pickedUp, Duration held) {
+        Booking b = new Booking(r, c, pickedUp);
+        b.setPickedUpAt(pickedUp);
+        b.setReturnedAt(pickedUp.plus(held));
+        bookings.save(b);
     }
 }

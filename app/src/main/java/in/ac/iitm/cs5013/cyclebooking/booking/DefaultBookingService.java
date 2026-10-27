@@ -12,6 +12,7 @@ import in.ac.iitm.cs5013.cyclebooking.persistence.ResidentRepository;
 import in.ac.iitm.cs5013.cyclebooking.rules.EligibilityResult;
 import in.ac.iitm.cs5013.cyclebooking.rules.RuleService;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -75,6 +76,23 @@ class DefaultBookingService implements BookingService {
         return bookings.findOpenBookingForResident(residentId)
                 .map(b -> new CurrentRental(b.getId(), b.getCycle().getLabel(), b.getCycle().getState(),
                         b.getCreatedAt(), b.getPickedUpAt(), b.getIdCheck(), b.isOverdue(now)));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<HistoryEntry> history(long residentId) {
+        Instant now = clock.instant();
+        return bookings.findByResidentIdOrderByCreatedAtDesc(residentId).stream()
+                .map(b -> toHistoryEntry(b, now))
+                .toList();
+    }
+
+    /** Time held runs from pickup to return, or to now while the cycle is still out. */
+    private static HistoryEntry toHistoryEntry(Booking b, Instant now) {
+        Instant end = b.getReturnedAt() != null ? b.getReturnedAt() : now;
+        Duration held = b.getPickedUpAt() == null ? Duration.ZERO : Duration.between(b.getPickedUpAt(), end);
+        return new HistoryEntry(b.getCycle().getLabel(), b.getCreatedAt(), b.getPickedUpAt(), b.getReturnedAt(),
+                held.toMinutes() / 60.0, held.compareTo(Booking.MAX_HOLD) > 0);
     }
 
     private void checkRules(ResidentIdentity resident) {
