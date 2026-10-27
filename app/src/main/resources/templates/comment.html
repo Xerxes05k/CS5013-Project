@@ -15,6 +15,7 @@
 </header>
 
 <main class="stack">
+    <div th:replace="~{fragments/layout :: confirmed}"></div>
     <p class="notice" th:if="${notice}" th:text="${notice}">Return confirmed.</p>
     <p class="error" th:if="${error}" th:text="${error}">The comment is empty.</p>
 

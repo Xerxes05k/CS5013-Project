@@ -94,6 +94,13 @@ textarea { font-family: inherit; resize: vertical; }
 .report tfoot th, .report tfoot td { font-weight: 600; border-bottom: 0; }
 
 
+/* Guard confirmation panel: read at arm's length, so large type, white on dark green
+   (about 6:1 contrast). */
+.confirmed { margin-bottom: 1rem; padding: 1.25rem 1rem; border-radius: 12px; background: #157347; color: #fff; text-align: center; }
+.confirmed p { margin: 0; }
+.confirmed-title { font-size: 1.4rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+.confirmed-cycle { margin: .25rem 0; font-size: 2.6rem; font-weight: 800; line-height: 1.2; }
+
 /* Top bar: hostel name and log out, on every page after login. */
 .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: .75rem; font-weight: 600; }
 .topbar form { margin: 0; }
