@@ -56,9 +56,12 @@ public class RentalController {
     }
 
     @GetMapping("/rental")
-    String myCycle(Principal principal, Model model) {
+    String myCycle(Principal principal, Model model, RedirectAttributes redirect) {
         Optional<CurrentRental> rental = current(principal);
         if (rental.isEmpty()) {
+            // Reached from the "My cycle" tab with nothing booked: say so rather than
+            // silently showing the cycle list.
+            redirect.addFlashAttribute("notice", "You have no cycle booked. Pick a free one below.");
             return "redirect:/cycles";
         }
         CurrentRental r = rental.get();
