@@ -4,13 +4,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import in.ac.iitm.cs5013.cyclebooking.persistence.Booking;
 import in.ac.iitm.cs5013.cyclebooking.persistence.BookingRepository;
+import in.ac.iitm.cs5013.cyclebooking.persistence.Comment;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Cycle;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleRepository;
+import in.ac.iitm.cs5013.cyclebooking.persistence.FlagSource;
+import in.ac.iitm.cs5013.cyclebooking.persistence.MaintenanceFlag;
+import in.ac.iitm.cs5013.cyclebooking.persistence.MaintenanceFlagRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Resident;
 import in.ac.iitm.cs5013.cyclebooking.reporting.UsageReport.CycleUsage;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +41,9 @@ class DefaultReportingServiceTest {
     private CycleRepository cycles;
 
     @Autowired
+    private MaintenanceFlagRepository flags;
+
+    @Autowired
     private TestEntityManager entityManager;
 
     private ReportingService reporting;
@@ -43,7 +51,7 @@ class DefaultReportingServiceTest {
 
     @BeforeEach
     void setUp() {
-        reporting = new DefaultReportingService(bookings, cycles, Clock.fixed(NOW, ZoneOffset.UTC));
+        reporting = new DefaultReportingService(bookings, cycles, flags, Clock.fixed(NOW, ZoneOffset.UTC));
         resident = entityManager.persist(
                 new Resident("CE24B080", "Report Test", "Jamuna", "ce24b080@smail.iitm.ac.in", "hash"));
     }
@@ -88,5 +96,32 @@ class DefaultReportingServiceTest {
                 new CycleUsage("REP-C", 1, 5.0),
                 new CycleUsage("REP-D", 0, 0.0));
         assertThat(report.totalHours()).isEqualTo(13.5);
+    }
+
+    @Test
+    void getMaintenanceList_showsOpenFlagsWithTheirWordsGroupedByCycle() {
+        Cycle b = cycle("REP-B");
+        Cycle a = cycle("REP-A");
+        Booking returned = new Booking(resident, b, NOW.minusSeconds(7200));
+        returned.setPickedUpAt(NOW.minusSeconds(7200));
+        returned.setReturnedAt(NOW.minusSeconds(3600));
+        entityManager.persist(returned);
+        Comment comment = entityManager.persist(new Comment(returned, "chain keeps slipping off", NOW));
+
+        entityManager.persist(new MaintenanceFlag(b, null, "guard_note", FlagSource.GUARD,
+                NOW.minusSeconds(3600), "front brake loose"));
+        entityManager.persist(new MaintenanceFlag(b, comment, "chain", FlagSource.COMMENT, NOW));
+        entityManager.persist(new MaintenanceFlag(a, null, "guard_note", FlagSource.GUARD,
+                NOW.minusSeconds(60), "bell missing"));
+        MaintenanceFlag fixed = new MaintenanceFlag(a, null, "guard_note", FlagSource.GUARD,
+                NOW.minusSeconds(86400), "flat tyre");
+        fixed.setResolvedAt(NOW.minusSeconds(3600));
+        entityManager.persist(fixed);
+
+        List<MaintenanceItem> list = reporting.getMaintenanceList();
+
+        assertThat(list).extracting(MaintenanceItem::cycleLabel).containsExactly("REP-A", "REP-B", "REP-B");
+        assertThat(list).extracting(MaintenanceItem::words)
+                .containsExactly("bell missing", "chain keeps slipping off", "front brake loose");
     }
 }

@@ -1,6 +1,7 @@
 package in.ac.iitm.cs5013.cyclebooking.reporting;
 
 import java.time.Instant;
+import java.util.List;
 
 /** Reporting Module: the GS/Warden view of how the cycle pool is used. */
 public interface ReportingService {
@@ -10,4 +11,7 @@ public interface ReportingService {
 
     /** Usage over [from, to). Rentals that straddle an edge count only their hours inside it. */
     UsageReport getUsageReport(Instant from, Instant to);
+
+    /** Flags not yet resolved, grouped by cycle label and newest first within a cycle. */
+    List<MaintenanceItem> getMaintenanceList();
 }
