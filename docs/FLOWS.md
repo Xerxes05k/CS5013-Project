@@ -132,6 +132,7 @@ Every `POST` ends in a redirect (post-redirect-get), so refreshing a page never 
 | GET | `/rental/comment` | `RentalController.commentBox` | — | `comment.html` | `/cycles` if no return in session |
 | POST | `/rental/comment` (text) | `RentalController.comment` | `submitComment` | `/cycles` | `/rental/comment` with error |
 | POST | `/rental/comment/skip` | `RentalController.skipComment` | — | `/cycles` | |
+| GET | `/history` | `HistoryController.history` | `currentResident`, `history` | `history.html` | |
 | GET | `/report` | `ReportController.usage` | `getWeeklyUsageReport` | `report.html` | |
 
 **The booking id is never read from a form.** Pickup and return act on the logged-in resident's own open booking (`currentRental`); the comment acts on the booking id kept in the server-side session. A resident can't act on someone else's booking by editing a hidden field.
