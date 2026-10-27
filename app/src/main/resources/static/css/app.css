@@ -61,8 +61,10 @@ button {
     color: #fff;
 }
 
-.error { color: var(--repair); }
-.notice { color: var(--free); }
+/* Messages: a tinted bar at the top of the content, so a result is hard to miss. */
+.error, .notice { padding: .65rem .85rem; border-radius: 8px; }
+.error { color: var(--repair); background: #fdecea; }
+.notice { color: var(--free); background: #e6f4ea; }
 
 a.book {
     display: inline-flex;
