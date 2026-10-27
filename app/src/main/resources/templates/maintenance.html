@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Maintenance — Jamuna Hostel cycles</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+<nav th:replace="~{fragments/layout :: tabs('report')}"></nav>
+<nav th:replace="~{fragments/layout :: subtabs('maintenance')}"></nav>
+<header>
+    <h1>Needs attention</h1>
+    <p class="summary">What guards and residents reported, in their own words. Newest first for each cycle.</p>
+</header>
+
+<main>
+    <ul class="cards" th:unless="${byCycle.isEmpty()}">
+        <li th:each="entry : ${byCycle}" class="card">
+            <div class="card-head">
+                <span class="label" th:text="${entry.key}">JAM-02</span>
+                <span class="card-note" th:text="${#lists.size(entry.value) == 1} ? '1 open issue' : |${#lists.size(entry.value)} open issues|">2 open issues</span>
+            </div>
+            <ul class="flags">
+                <li th:each="flag : ${entry.value}" class="flag">
+                    <div class="flag-head">
+                        <span><span class="flag-issue" th:text="${flag.issue}">Guard note</span> · <span th:text="${flag.reportedBy}">Guard, at return</span></span>
+                        <span th:text="${flag.when}">11 Oct, 6:40 pm</span>
+                    </div>
+                    <p class="flag-words" th:text="${flag.words}">front brake loose</p>
+                </li>
+            </ul>
+        </li>
+    </ul>
+    <p class="empty" th:if="${byCycle.isEmpty()}">Nothing reported. Every cycle is fine as far as anyone has said.</p>
+</main>
+</body>
+</html>

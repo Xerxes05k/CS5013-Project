@@ -26,6 +26,12 @@
        th:aria-current="${active == 'report'} ? 'page'">Report</a>
 </nav>
 
+<!-- sub: which part of the Report tab is showing, "usage" or "maintenance". -->
+<nav th:fragment="subtabs(sub)" class="subtabs" aria-label="Report sections">
+    <a class="subtab" th:classappend="${sub == 'usage'} ? 'active'" th:href="@{/report}">Usage</a>
+    <a class="subtab" th:classappend="${sub == 'maintenance'} ? 'active'" th:href="@{/report/maintenance}">Maintenance</a>
+</nav>
+
 <!-- After a pickup or return succeeds. The guard has no device and reads this off the
      resident's phone, so it is big and says what the guard should do (docs/UI.md §2).
      confirmed is a RentalController.GuardConfirmation flash attribute. -->
