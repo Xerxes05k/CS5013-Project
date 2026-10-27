@@ -78,6 +78,13 @@ Every item below from week 4 on has a tag: **[BE]** backend, **[FE]** frontend, 
   - [x] Developer architecture and flowcharts for every request (`docs/FLOWS.md`)
   - [x] Work split: backend / frontend owners and the PR workflow (see "Team and work split" above)
   - [ ] Switch to small commits per change, merged through reviewed PRs: first PR is these docs
+  - Further feedback: the UI is one plain page with no navigation; a cycle has no properties that explain its next state
+  - [x] Design: cycle parts decide the cycle's state (ADR 0005, `docs/SCHEMA.md` §8, `docs/FLOWS.md` §9)
+  - [x] Design: tab navigation and page wireframes (`docs/UI.md`)
+  - [ ] **[FE · Aditya]** Tab bar on every page: layout fragment + `@ControllerAdvice` for `hasOpenRental` (UI.md §1)
+  - [ ] **[FE · Aditya]** Cycle cards with state chips; new CSS rules (UI.md §2–3)
+  - [ ] **[FE · Aditya]** Full-width guard confirmation panel after pickup / return
+  - [ ] **[BE · Aditya]** `BookingService.history(residentId)` returning records + test; **[FE · Aditya]** History tab
 - [x] **Maintenance Comment Module (v1):** post-return comment box, stored; guard condition note at check-in
 - [x] Start the labeled phrase dataset for the classifier (target ≥100 comments across ~8 issue labels)
 - [ ] Sunday PROGRESS entry (PR)
@@ -86,11 +93,17 @@ Every item below from week 4 on has a tag: **[BE]** backend, **[FE]** frontend, 
 
 **Goal: the classifier.**
 
+- [ ] **[BE · Yashas] Contract PR first (ADR 0005):** `Part`, `PartCondition`, `PartStatus` record, new `MaintenanceService` / `TransactionService` signatures (SCHEMA.md §8)
+- [ ] **[BE · Yashas]** `CyclePart` entity + repository; 8 `OK` rows per cycle in `data.sql` (JAM-05: brakes `BROKEN`)
+- [ ] **[BE · Yashas]** `recordInspection` with the fit-to-ride rule; tests: broken brakes → `UNDER_REPAIR`, broken bell → `AVAILABLE`
+- [ ] **[BE · Yashas]** `confirmReturn` sets the state `recordInspection` returns; `recordRepair` for the GS
+- [ ] **[BE · Aditya]** `CycleStatus.knownIssues` and `partsOf` for the cards and cycle detail
+- [ ] **[FE · Aditya]** Known issues on cycle cards; cycle detail page with the parts grid; parts checklist on the return form
 - [ ] **[BE · Yashas] CommentClassifier:** Apache OpenNLP model trained on the labeled set; precision/recall recorded in PROGRESS
 - [ ] **[BE · Yashas]** `MaintenanceService.submitComment` → flags (ADR 0003)
 - [ ] **[FE · Aditya]** after a comment, show the raw comment next to the flags it raised
 - [ ] **[BE · Aditya] Reporting Module (v2):** `getMaintenanceList` combining guard notes + auto-flags; GS can mark a flag resolved
-- [ ] **[FE · Aditya]** GS maintenance list page: open flags per cycle, raw comment / guard words, "resolved" button
+- [ ] **[FE · Aditya]** GS tab with Usage · Maintenance · Fleet sub-tabs; maintenance list shows raw comment / guard words and a "Repaired" button (UI.md §2)
 - [ ] **[BE · Yashas]** GS role in `SecurityConfig`: only the GS sees `/report` and the maintenance list
 - [ ] Sunday PROGRESS entry (PR)
 
@@ -98,7 +111,7 @@ Every item below from week 4 on has a tag: **[BE]** backend, **[FE]** frontend, 
 
 **Goal: deployed and piloted.**
 
-- [ ] **[BE · Yashas]** Deploy to free-tier host (Render/Railway); ADR 0005 on hosting choice
+- [ ] **[BE · Yashas]** Deploy to free-tier host (Render/Railway); ADR 0006 on hosting choice (0005 is now the cycle-parts decision)
 - [ ] **[FE · Aditya]** Phone pass before the pilot: every page on a real phone, camera opens straight from the ID-scan page, guard can read the pickup/return confirmation at arm's length
 - [ ] **[both]** Pilot with the Jamuna GS + one guard shift; log issues
 - [ ] **[BE · Aditya]** Verify usage-hours report against a week of the paper register (verification-plan fixture)
