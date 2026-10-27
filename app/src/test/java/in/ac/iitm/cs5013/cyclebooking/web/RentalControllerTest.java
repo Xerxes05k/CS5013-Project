@@ -1,5 +1,6 @@
 package in.ac.iitm.cs5013.cyclebooking.web;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -112,5 +113,36 @@ class RentalControllerTest {
         mockMvc.perform(get("/rental"))
                 .andExpect(redirectedUrl("/cycles"))
                 .andExpect(flash().attribute("notice", "You have no cycle booked. Pick a free one below."));
+    }
+
+    @Test
+    void pickupShowsTheGuardWhatToDoAndWhenItIsDue() throws Exception {
+        RentalController.GuardConfirmation shown = (RentalController.GuardConfirmation) mockMvc
+                .perform(post("/rental/pickup").param("passcode", "cycle1234").with(csrf()))
+                .andExpect(redirectedUrl("/rental"))
+                .andReturn().getFlashMap().get("confirmed");
+
+        verify(transactions).confirmPickup(42L, "cycle1234");
+        assertThat(shown.title()).isEqualTo("Pickup confirmed");
+        assertThat(shown.cycleLabel()).isEqualTo("JAM-02");
+        assertThat(shown.detail()).startsWith("Guard: hand over the cycle. Due back by ");
+    }
+
+    @Test
+    void returnShowsTheGuardAReturnConfirmation() throws Exception {
+        mockMvc.perform(post("/rental/return").param("passcode", "cycle1234").session(session).with(csrf()))
+                .andExpect(flash().attribute("confirmed", new RentalController.GuardConfirmation(
+                        "Return confirmed", "JAM-02", "Guard: take the cycle back. Thanks!")));
+    }
+
+    @Test
+    void confirmationPanelIsShownOnlyRightAfterTheStep() throws Exception {
+        mockMvc.perform(get("/rental").flashAttr("confirmed",
+                        new RentalController.GuardConfirmation("Pickup confirmed", "JAM-02", "Guard: hand over the cycle.")))
+                .andExpect(content().string(Matchers.containsString("class=\"confirmed\"")))
+                .andExpect(content().string(Matchers.containsString("Guard: hand over the cycle.")));
+
+        mockMvc.perform(get("/rental"))
+                .andExpect(content().string(Matchers.not(Matchers.containsString("class=\"confirmed\""))));
     }
 }
