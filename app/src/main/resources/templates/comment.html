@@ -7,6 +7,8 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+<nav th:replace="~{fragments/layout :: tabs('rental')}"></nav>
 <header>
     <h1>How was <span th:text="${returned.cycleLabel}">JAM-01</span>?</h1>
     <p class="summary">Returned. If anything was wrong with the cycle, tell the GS here.</p>

@@ -7,6 +7,8 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+<nav th:replace="~{fragments/layout :: tabs('rental')}"></nav>
 <header>
     <h1>My cycle: <span th:text="${rental.cycleLabel}">JAM-01</span></h1>
     <p class="summary" th:if="${rental.awaitingPickup()}">Booked <span th:text="${bookedAt}">Sun 4 Oct, 2:00 pm</span>, not picked up yet</p>
@@ -45,7 +47,6 @@
         <button type="submit">Confirm return</button>
     </form>
 
-    <p><a th:href="@{/cycles}">&larr; All cycles</a></p>
 </main>
 </body>
 </html>
