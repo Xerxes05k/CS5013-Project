@@ -396,6 +396,35 @@ stateDiagram-v2
 
 Built today: the three transitions in the top cycle. A guard flag **does not** change the cycle's state; it only adds a row to `maintenance_flags`. `UNDER_REPAIR` exists in the enum and the seed data but nothing in the code sets or clears it yet.
 
+### Cycle, once its parts decide the state (planned, week 5, ADR 0005)
+
+Each cycle gets 8 parts with a condition (`OK` / `REPORTED` / `BROKEN`); see [SCHEMA.md §8](SCHEMA.md#8-planned-cycle-parts-decide-the-cycles-state-adr-0005). The two transitions out of the stand now depend on those properties:
+
+```mermaid
+stateDiagram-v2
+    [*] --> AVAILABLE
+    AVAILABLE --> BOOKED: createBooking
+    BOOKED --> ISSUED: confirmPickup
+    ISSUED --> CheckParts: confirmReturn · guard ticks broken parts
+    state CheckParts <<choice>>
+    CheckParts --> AVAILABLE: no critical part BROKEN
+    CheckParts --> UNDER_REPAIR: a critical part BROKEN
+    AVAILABLE --> UNDER_REPAIR: GS records a critical fault
+    UNDER_REPAIR --> AVAILABLE: GS repairs the last broken critical part
+```
+
+```mermaid
+flowchart TD
+    R(["confirmReturn(bookingId, passcode, brokenParts, note)"]) --> S["state + passcode checks (unchanged)"]
+    S --> I["MaintenanceService.recordInspection"]
+    I --> U["for each ticked part:<br/>cycle_parts.condition = BROKEN, changed_by = GUARD<br/>+ INSERT maintenance_flags (label = part)"]
+    U --> Q{"any part where<br/>part.critical AND condition = BROKEN?"}
+    Q -- no --> A["cycle.state = AVAILABLE<br/>non-critical faults shown as known issues"]
+    Q -- yes --> B["cycle.state = UNDER_REPAIR<br/>hidden from booking until GS repairs it"]
+```
+
+A resident comment can only move a part to `REPORTED` (the classifier is triage, ADR 0003), so it never changes the cycle's state by itself.
+
 ### Booking (derived from its timestamps)
 
 A booking has no `state` column; its stage is read from which timestamps are set.
@@ -467,6 +496,8 @@ The DB connection pool has one connection (`spring.datasource.hikari.maximum-poo
 | Guard note at return → GUARD flag | built | 4 |
 | Post-return comment box | built | 4 |
 | Comment classifier → COMMENT flags | planned | 5 |
+| Cycle parts decide the state (`OK` / `REPORTED` / `BROKEN`, ADR 0005) | planned | 5 |
+| Tab navigation, cycle cards, cycle detail, history (UI.md) | planned | 4–5 |
 | GS maintenance list, resolve flags, `UNDER_REPAIR` | planned | 5 |
 | GS-only role for `/report` | planned | 5 |
 | Booking cancel / no-show expiry | not yet scheduled | — |

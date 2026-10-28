@@ -276,3 +276,94 @@ What each query is for. JPQL is written against entities. Spring derives the "de
 ## 7. Seed data
 
 `app/src/main/resources/data.sql` runs on every start and inserts only rows that don't exist yet: one demo resident (`CE24B128`, passcode `cycle1234`, dev only) and cycles `JAM-01`…`JAM-05` in mixed states so every screen has something to show.
+
+---
+
+## 8. Planned: cycle parts decide the cycle's state (ADR 0005)
+
+**Not built yet.** Target: week 5. Everything above describes the code as it is today. This section is the agreed design for the next step, from the mid-demo feedback that a cycle's properties should explain its next state.
+
+### New table and its links
+
+```mermaid
+erDiagram
+    CYCLES ||--|{ CYCLE_PARTS : "has exactly 8"
+    CYCLES ||--o{ MAINTENANCE_FLAGS : "history of"
+    CYCLE_PARTS ||..o{ MAINTENANCE_FLAGS : "each change logged as"
+
+    CYCLES {
+        integer id PK
+        varchar label UK
+        varchar state "decided by its parts"
+        timestamp last_returned_at
+        bigint version
+    }
+    CYCLE_PARTS {
+        integer id PK
+        bigint cycle_id FK
+        varchar part "TYRE BRAKES CHAIN SEAT PEDAL HANDLEBAR LOCK BELL"
+        varchar condition "OK REPORTED BROKEN"
+        varchar changed_by "GUARD COMMENT GS"
+        timestamp updated_at
+        varchar note "max 500, last person's words"
+    }
+    MAINTENANCE_FLAGS {
+        integer id PK
+        bigint cycle_id FK
+        varchar label "now always a part name"
+        varchar source "GUARD COMMENT GS"
+    }
+```
+
+### `cycle_parts` — `CyclePart.java`
+
+| Column | SQL type | Constraint | Java field | Meaning |
+|---|---|---|---|---|
+| `id` | integer | PK | `Long id` | |
+| `cycle_id` | bigint | NOT NULL | `Cycle cycle` | |
+| `part` | varchar | NOT NULL, CHECK in enum | `Part part` | Which part. |
+| `condition` | varchar | NOT NULL, CHECK in enum | `PartCondition condition` | Current condition. |
+| `changed_by` | varchar | NOT NULL, CHECK in enum | `FlagSource changedBy` | Who last changed it. `FlagSource` gains `GS`. |
+| `updated_at` | timestamp | NOT NULL | `Instant updatedAt` | |
+| `note` | varchar(500) | nullable | `String note` | The guard's or GS's words, if any. |
+| | | **UNIQUE (`cycle_id`, `part`)** | | One row per part per cycle. |
+
+8 rows are created with the cycle, all `OK`. Rows are updated, never deleted. The history lives in `maintenance_flags`.
+
+### New enums
+
+| Enum | Values | Notes |
+|---|---|---|
+| `Part` | `TYRE`, `BRAKES`, `CHAIN`, `SEAT`, `PEDAL`, `HANDLEBAR`, `LOCK`, `BELL` | Same names as the classifier labels. Each value carries `boolean critical`: true for the first six, false for `LOCK` and `BELL`. |
+| `PartCondition` | `OK`, `REPORTED`, `BROKEN` | `REPORTED` = someone said something, nobody has confirmed it. `BROKEN` = the guard or GS saw it. |
+| `FlagSource` | `GUARD`, `COMMENT`, **`GS`** | `GS` added for repairs and GS-confirmed faults. |
+
+### The rule: which properties decide the next state
+
+```
+fitToRide(cycle) = no part p where p.part.critical AND p.condition == BROKEN
+
+next state = fitToRide ? AVAILABLE : UNDER_REPAIR
+```
+
+Applied only when the cycle is back at the stand: at **return** and when the **GS records a repair or a fault**. It is never applied to a `BOOKED` or `ISSUED` cycle.
+
+| Event | Who | Part change | Then |
+|---|---|---|---|
+| Return, guard finds nothing | guard | none | → `AVAILABLE` |
+| Return, guard finds bell broken | guard | BELL → `BROKEN` | not critical → `AVAILABLE`, residents see "bell broken" |
+| Return, guard finds brakes broken | guard | BRAKES → `BROKEN` | critical → `UNDER_REPAIR` |
+| Resident comment "brakes feel weak" | classifier | BRAKES `OK` → `REPORTED` | state unchanged; shows on GS list and as "brakes reported" to residents |
+| GS repairs brakes | GS | BRAKES → `OK` | no other critical part broken → `AVAILABLE` |
+| GS inspects and finds tyre flat | GS | TYRE → `BROKEN` | `AVAILABLE` → `UNDER_REPAIR` |
+
+### Contract changes (backend → frontend)
+
+| Interface | Change |
+|---|---|
+| `MaintenanceService` | `recordGuardNote(bookingId, note)` → `CycleState recordInspection(long bookingId, Set<Part> brokenParts, String note)`, returns the next state |
+| `MaintenanceService` | new `List<PartStatus> partsOf(long cycleId)` |
+| `MaintenanceService` | new `CycleState recordRepair(long cycleId, Part part, String note)` (GS) |
+| `TransactionService` | `confirmReturn(bookingId, passcode, Set<Part> brokenParts, String note)` |
+| `BookingService` | `CycleStatus` gains `List<Part> knownIssues` (parts not `OK`) for the cycle list |
+| new record | `PartStatus(Part part, boolean critical, PartCondition condition, Instant updatedAt, String note)` |
