@@ -15,7 +15,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
-import java.util.function.LongConsumer;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,6 +39,13 @@ public class RentalController {
 
     /** The booking the comment box is for. Kept in the session, never sent to the browser. */
     record ReturnedRental(long bookingId, String cycleLabel) implements Serializable {
+    }
+
+    /**
+     * The big green panel shown after a pickup or return succeeds. The guard has no
+     * device and reads this off the resident's phone, so it says what the guard should do.
+     */
+    record GuardConfirmation(String title, String cycleLabel, String detail) implements Serializable {
     }
 
     private final BookingService booking;
@@ -76,8 +82,25 @@ public class RentalController {
 
     @PostMapping("/rental/pickup")
     String pickup(@RequestParam String passcode, Principal principal, RedirectAttributes redirect) {
-        return step(principal, redirect, id -> transactions.confirmPickup(id, passcode),
-                "Pickup confirmed. The guard can hand over the cycle. Return it within 24 hours.", "/rental");
+        Optional<CurrentRental> rental = current(principal);
+        if (rental.isEmpty()) {
+            redirect.addFlashAttribute("error", "You have no cycle booked.");
+            return "redirect:/cycles";
+        }
+        try {
+            transactions.confirmPickup(rental.get().bookingId(), passcode);
+        } catch (TransactionRejectedException e) {
+            redirect.addFlashAttribute("error", e.getMessage());
+            return "redirect:/rental";
+        }
+        // Read the booking again so the due time comes from the pickup time just saved.
+        String detail = current(principal)
+                .filter(r -> r.pickedUpAt() != null)
+                .map(r -> "Guard: hand over the cycle. Due back by " + show(r.pickedUpAt().plus(Booking.MAX_HOLD)) + ".")
+                .orElse("Guard: hand over the cycle.");
+        redirect.addFlashAttribute("confirmed",
+                new GuardConfirmation("Pickup confirmed", rental.get().cycleLabel(), detail));
+        return "redirect:/rental";
     }
 
     @PostMapping("/rental/return")
@@ -96,7 +119,8 @@ public class RentalController {
             return "redirect:/rental";
         }
         session.setAttribute(RETURNED, new ReturnedRental(r.bookingId(), r.cycleLabel()));
-        redirect.addFlashAttribute("notice", "Return confirmed. Thanks!");
+        redirect.addFlashAttribute("confirmed",
+                new GuardConfirmation("Return confirmed", r.cycleLabel(), "Guard: take the cycle back. Thanks!"));
         return "redirect:/rental/comment";
     }
 
@@ -130,24 +154,6 @@ public class RentalController {
     String skipComment(HttpSession session) {
         session.removeAttribute(RETURNED);
         return "redirect:/cycles";
-    }
-
-    /** Runs a pickup or return on the resident's own open booking and redirects with the outcome. */
-    private String step(Principal principal, RedirectAttributes redirect, LongConsumer action,
-            String successNotice, String successPage) {
-        Optional<CurrentRental> rental = current(principal);
-        if (rental.isEmpty()) {
-            redirect.addFlashAttribute("error", "You have no cycle booked.");
-            return "redirect:/cycles";
-        }
-        try {
-            action.accept(rental.get().bookingId());
-        } catch (TransactionRejectedException e) {
-            redirect.addFlashAttribute("error", e.getMessage());
-            return "redirect:/rental";
-        }
-        redirect.addFlashAttribute("notice", successNotice);
-        return "redirect:" + successPage;
     }
 
     private Optional<CurrentRental> current(Principal principal) {

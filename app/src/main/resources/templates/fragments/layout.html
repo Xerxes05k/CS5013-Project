@@ -24,5 +24,14 @@
        th:aria-current="${active == 'report'} ? 'page'">Report</a>
 </nav>
 
+<!-- After a pickup or return succeeds. The guard has no device and reads this off the
+     resident's phone, so it is big and says what the guard should do (docs/UI.md §2).
+     confirmed is a RentalController.GuardConfirmation flash attribute. -->
+<div th:fragment="confirmed" class="confirmed" th:if="${confirmed}" role="status">
+    <p class="confirmed-title">&#10003; <span th:text="${confirmed.title}">Pickup confirmed</span></p>
+    <p class="confirmed-cycle" th:text="${confirmed.cycleLabel}">JAM-04</p>
+    <p th:text="${confirmed.detail}">Guard: hand over the cycle.</p>
+</div>
+
 </body>
 </html>
