@@ -7,6 +7,8 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+<nav th:replace="~{fragments/layout :: tabs('cycles')}"></nav>
 <header>
     <h1>Jamuna Hostel cycles</h1>
     <p class="summary">
@@ -38,11 +40,5 @@
     <p class="empty" th:if="${#lists.isEmpty(cycles)}">No cycles registered yet.</p>
 </main>
 
-<footer>
-    <a th:href="@{/report}">Usage report</a>
-    <form th:action="@{/logout}" method="post">
-        <button type="submit">Log out</button>
-    </form>
-</footer>
 </body>
 </html>

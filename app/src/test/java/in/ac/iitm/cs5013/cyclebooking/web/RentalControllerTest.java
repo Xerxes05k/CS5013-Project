@@ -10,6 +10,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 
 import in.ac.iitm.cs5013.cyclebooking.auth.AuthService;
@@ -102,5 +103,14 @@ class RentalControllerTest {
                         .session(session).with(csrf()))
                 .andExpect(redirectedUrl("/cycles"));
         verify(maintenance, never()).submitComment(anyLong(), anyString());
+    }
+
+    @Test
+    void myCycleTabWithNothingBookedSaysSoOnTheCycleList() throws Exception {
+        when(booking.currentRental(1L)).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/rental"))
+                .andExpect(redirectedUrl("/cycles"))
+                .andExpect(flash().attribute("notice", "You have no cycle booked. Pick a free one below."));
     }
 }

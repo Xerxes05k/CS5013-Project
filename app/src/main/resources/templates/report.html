@@ -7,6 +7,8 @@
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+<nav th:replace="~{fragments/layout :: tabs('report')}"></nav>
 <header>
     <h1>Cycle usage, last 7 days</h1>
     <p class="summary"><span th:text="${from}">27 Sep</span> to <span th:text="${to}">4 Oct</span></p>
@@ -33,7 +35,6 @@
         </tfoot>
     </table>
     <p class="note">Hours count from pickup to return. A cycle still out counts up to now.</p>
-    <p><a th:href="@{/cycles}">&larr; All cycles</a></p>
 </main>
 </body>
 </html>
