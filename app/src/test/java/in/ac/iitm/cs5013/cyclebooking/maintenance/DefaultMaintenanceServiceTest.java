@@ -121,7 +121,7 @@ class DefaultMaintenanceServiceTest {
 
         assertThat(flags.findByCycleId(cycleId)).singleElement().satisfies(flag -> {
             assertThat(flag.getSource()).isEqualTo(FlagSource.GUARD);
-            assertThat(flag.getLabel()).isEqualTo(DefaultMaintenanceService.GUARD_NOTE_LABEL);
+            assertThat(flag.getLabel()).isEqualTo(MaintenanceService.GUARD_NOTE_LABEL);
             assertThat(flag.getNote()).isEqualTo("rear tyre soft");
             assertThat(flag.getResolvedAt()).isNull();
         });

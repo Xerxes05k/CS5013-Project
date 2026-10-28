@@ -17,6 +17,12 @@ public interface MaintenanceService {
     int MAX_GUARD_NOTE_LENGTH = 500;
 
     /**
+     * Label of the flag raised by a guard's free-text note that names no part. Pages show
+     * it as "Guard note"; every other label is a part name.
+     */
+    String GUARD_NOTE_LABEL = "guard_note";
+
+    /**
      * Stores the resident's comment on a returned booking, one per booking. Returns the
      * flags it raised: none in v1 (week 4). The week-5 classifier fills this in.
      * Throws {@link CommentRejectedException} for a blank or too-long comment, a booking

@@ -1,5 +1,6 @@
 package in.ac.iitm.cs5013.cyclebooking.web;
 
+import in.ac.iitm.cs5013.cyclebooking.maintenance.MaintenanceService;
 import in.ac.iitm.cs5013.cyclebooking.reporting.MaintenanceItem;
 import in.ac.iitm.cs5013.cyclebooking.reporting.ReportingService;
 import in.ac.iitm.cs5013.cyclebooking.reporting.UsageReport;
@@ -55,7 +56,7 @@ public class ReportController {
     }
 
     private static FlagRow toRow(MaintenanceItem item) {
-        String issue = item.label().equals("guard_note") ? "Guard note" : capitalise(item.label());
+        String issue = item.label().equals(MaintenanceService.GUARD_NOTE_LABEL) ? "Guard note" : capitalise(item.label());
         // Exhaustive: a new FlagSource fails to compile here rather than showing the wrong reporter.
         String reportedBy = switch (item.source()) {
             case GUARD -> "Guard, at return";

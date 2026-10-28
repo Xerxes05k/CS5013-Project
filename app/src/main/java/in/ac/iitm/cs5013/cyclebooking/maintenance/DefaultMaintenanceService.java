@@ -20,9 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 class DefaultMaintenanceService implements MaintenanceService {
 
-    /** Label of a flag raised by the guard's note, until the classifier labels notes too. */
-    static final String GUARD_NOTE_LABEL = "guard_note";
-
     private final BookingRepository bookings;
     private final CommentRepository comments;
     private final MaintenanceFlagRepository flags;
