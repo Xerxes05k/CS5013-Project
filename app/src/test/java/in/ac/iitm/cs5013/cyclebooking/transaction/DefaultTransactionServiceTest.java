@@ -9,11 +9,13 @@ import in.ac.iitm.cs5013.cyclebooking.persistence.Cycle;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
 import in.ac.iitm.cs5013.cyclebooking.persistence.FlagSource;
+import in.ac.iitm.cs5013.cyclebooking.persistence.Part;
 import in.ac.iitm.cs5013.cyclebooking.persistence.IdCheck;
 import in.ac.iitm.cs5013.cyclebooking.persistence.MaintenanceFlagRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Resident;
 import in.ac.iitm.cs5013.cyclebooking.persistence.ResidentRepository;
 import java.time.Instant;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -109,7 +111,7 @@ class DefaultTransactionServiceTest {
 
     @Test
     void confirmReturn_beforePickupIsRefused() {
-        assertThatThrownBy(() -> transactions.confirmReturn(bookingId, PASSCODE, ""))
+        assertThatThrownBy(() -> transactions.confirmReturn(bookingId, PASSCODE, Set.of(), ""))
                 .isInstanceOf(TransactionRejectedException.class)
                 .hasMessageContaining("not been picked up");
 
@@ -121,7 +123,7 @@ class DefaultTransactionServiceTest {
     void confirmReturn_withWrongPasscodeLeavesCycleIssued() {
         transactions.confirmPickup(bookingId, PASSCODE);
 
-        assertThatThrownBy(() -> transactions.confirmReturn(bookingId, "wrong", "front brake loose"))
+        assertThatThrownBy(() -> transactions.confirmReturn(bookingId, "wrong", Set.of(), "front brake loose"))
                 .isInstanceOf(TransactionRejectedException.class);
 
         assertThat(cycleState()).isEqualTo(CycleState.ISSUED);
@@ -133,7 +135,7 @@ class DefaultTransactionServiceTest {
     void confirmReturn_withCorrectPasscodeMakesCycleAvailableAgain() {
         transactions.confirmPickup(bookingId, PASSCODE);
 
-        CycleState state = transactions.confirmReturn(bookingId, PASSCODE, "");
+        CycleState state = transactions.confirmReturn(bookingId, PASSCODE, Set.of(), "");
 
         assertThat(state).isEqualTo(CycleState.AVAILABLE);
         Cycle cycle = cycles.findById(cycleId).orElseThrow();
@@ -146,7 +148,7 @@ class DefaultTransactionServiceTest {
     void confirmReturn_withGuardNoteRaisesGuardFlagOnTheCycle() {
         transactions.confirmPickup(bookingId, PASSCODE);
 
-        transactions.confirmReturn(bookingId, PASSCODE, "  front brake loose ");
+        transactions.confirmReturn(bookingId, PASSCODE, Set.of(), "  front brake loose ");
 
         assertThat(cycleState()).isEqualTo(CycleState.AVAILABLE);
         assertThat(flags.findByCycleId(cycleId)).singleElement().satisfies(flag -> {
@@ -157,10 +159,22 @@ class DefaultTransactionServiceTest {
     }
 
     @Test
+    void confirmReturn_withTickedBrokenPartRaisesAFlagForThatPart() {
+        transactions.confirmPickup(bookingId, PASSCODE);
+
+        transactions.confirmReturn(bookingId, PASSCODE, Set.of(Part.BRAKES), "");
+
+        assertThat(flags.findByCycleId(cycleId)).singleElement().satisfies(flag -> {
+            assertThat(flag.getLabel()).isEqualTo("brakes");
+            assertThat(flag.getSource()).isEqualTo(FlagSource.GUARD);
+        });
+    }
+
+    @Test
     void confirmReturn_withBlankGuardNoteRaisesNoFlag() {
         transactions.confirmPickup(bookingId, PASSCODE);
 
-        transactions.confirmReturn(bookingId, PASSCODE, "   ");
+        transactions.confirmReturn(bookingId, PASSCODE, Set.of(), "   ");
 
         assertThat(flags.findByCycleId(cycleId)).isEmpty();
     }
@@ -169,7 +183,7 @@ class DefaultTransactionServiceTest {
     void confirmReturn_withTooLongGuardNoteChangesNothing() {
         transactions.confirmPickup(bookingId, PASSCODE);
 
-        assertThatThrownBy(() -> transactions.confirmReturn(bookingId, PASSCODE, "x".repeat(501)))
+        assertThatThrownBy(() -> transactions.confirmReturn(bookingId, PASSCODE, Set.of(), "x".repeat(501)))
                 .isInstanceOf(TransactionRejectedException.class)
                 .hasMessageContaining("too long");
 

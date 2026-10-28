@@ -5,6 +5,7 @@ import in.ac.iitm.cs5013.cyclebooking.persistence.Booking;
 import in.ac.iitm.cs5013.cyclebooking.persistence.BookingRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Cycle;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
+import in.ac.iitm.cs5013.cyclebooking.persistence.Part;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Set;
@@ -50,7 +51,8 @@ class DefaultTransactionService implements TransactionService {
 
     @Override
     @Transactional
-    public CycleState confirmReturn(long bookingId, String passcode, String guardConditionNote) {
+    public CycleState confirmReturn(long bookingId, String passcode, Set<Part> brokenParts,
+            String guardConditionNote) {
         Booking booking = find(bookingId);
         Cycle cycle = booking.getCycle();
         if (booking.getPickedUpAt() == null) {
@@ -69,8 +71,8 @@ class DefaultTransactionService implements TransactionService {
         booking.setReturnedAt(now);
         cycle.setLastReturnedAt(now);
         cycle.setState(CycleState.AVAILABLE);
-        // Same transaction: if saving the note fails, the return is undone too.
-        maintenance.recordInspection(bookingId, Set.of(), guardConditionNote);
+        // Same transaction: if saving the guard's findings fails, the return is undone too.
+        maintenance.recordInspection(bookingId, brokenParts, guardConditionNote);
         return cycle.getState();
     }
 

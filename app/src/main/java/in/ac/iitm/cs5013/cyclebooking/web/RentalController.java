@@ -6,6 +6,7 @@ import in.ac.iitm.cs5013.cyclebooking.booking.CurrentRental;
 import in.ac.iitm.cs5013.cyclebooking.maintenance.CommentRejectedException;
 import in.ac.iitm.cs5013.cyclebooking.maintenance.MaintenanceService;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Booking;
+import in.ac.iitm.cs5013.cyclebooking.persistence.Part;
 import in.ac.iitm.cs5013.cyclebooking.transaction.TransactionRejectedException;
 import in.ac.iitm.cs5013.cyclebooking.transaction.TransactionService;
 import jakarta.servlet.http.HttpSession;
@@ -15,6 +16,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
+import java.util.Set;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -105,6 +107,7 @@ public class RentalController {
 
     @PostMapping("/rental/return")
     String giveBack(@RequestParam String passcode, @RequestParam(defaultValue = "") String guardNote,
+            @RequestParam(required = false) Set<Part> brokenParts,
             Principal principal, HttpSession session, RedirectAttributes redirect) {
         Optional<CurrentRental> rental = current(principal);
         if (rental.isEmpty()) {
@@ -113,7 +116,9 @@ public class RentalController {
         }
         CurrentRental r = rental.get();
         try {
-            transactions.confirmReturn(r.bookingId(), passcode, guardNote);
+            // One "brokenParts" checkbox per part on the return form; none ticked sends none.
+            transactions.confirmReturn(r.bookingId(), passcode, brokenParts == null ? Set.of() : brokenParts,
+                    guardNote);
         } catch (TransactionRejectedException e) {
             redirect.addFlashAttribute("error", e.getMessage());
             return "redirect:/rental";

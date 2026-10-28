@@ -23,9 +23,11 @@ import in.ac.iitm.cs5013.cyclebooking.booking.CurrentRental;
 import in.ac.iitm.cs5013.cyclebooking.maintenance.MaintenanceService;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
 import in.ac.iitm.cs5013.cyclebooking.persistence.IdCheck;
+import in.ac.iitm.cs5013.cyclebooking.persistence.Part;
 import in.ac.iitm.cs5013.cyclebooking.transaction.TransactionService;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.Set;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -80,7 +82,7 @@ class RentalControllerTest {
         mockMvc.perform(post("/rental/return").param("passcode", "cycle1234").param("guardNote", "bell missing")
                         .session(session).with(csrf()))
                 .andExpect(redirectedUrl("/rental/comment"));
-        verify(transactions).confirmReturn(42L, "cycle1234", "bell missing");
+        verify(transactions).confirmReturn(42L, "cycle1234", Set.of(), "bell missing");
 
         mockMvc.perform(get("/rental/comment").session(session))
                 .andExpect(content().string(Matchers.containsString("How was <span>JAM-02</span>?")));
@@ -126,6 +128,15 @@ class RentalControllerTest {
         assertThat(shown.title()).isEqualTo("Pickup confirmed");
         assertThat(shown.cycleLabel()).isEqualTo("JAM-02");
         assertThat(shown.detail()).startsWith("Guard: hand over the cycle. Due back by ");
+    }
+
+    @Test
+    void returnPassesThePartsTheGuardFoundBroken() throws Exception {
+        mockMvc.perform(post("/rental/return").param("passcode", "cycle1234")
+                        .param("brokenParts", "BRAKES", "BELL").session(session).with(csrf()))
+                .andExpect(redirectedUrl("/rental/comment"));
+
+        verify(transactions).confirmReturn(42L, "cycle1234", Set.of(Part.BRAKES, Part.BELL), "");
     }
 
     @Test
