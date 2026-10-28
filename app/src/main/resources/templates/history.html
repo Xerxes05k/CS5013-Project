@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>History — Jamuna Hostel cycles</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+<nav th:replace="~{fragments/layout :: tabs('history')}"></nav>
+<header>
+    <h1>Your rentals</h1>
+    <p class="summary">Newest first. You can book 3 times in any 7 days, for up to 24 hours each.</p>
+</header>
+
+<main>
+    <ul class="cards" th:unless="${#lists.isEmpty(rows)}">
+        <li th:each="row : ${rows}" class="card">
+            <div class="card-head">
+                <span class="label" th:text="${row.cycleLabel}">JAM-04</span>
+                <span class="chip" th:classappend="'chip-' + ${row.status}" th:text="${row.status}">Returned</span>
+            </div>
+            <div class="card-foot">
+                <span class="card-note" th:text="|${row.bookedOn} · ${row.hours}|">Sun 11 Oct · 3.5 h</span>
+                <span class="late" th:if="${row.late}">Held over 24 h</span>
+            </div>
+        </li>
+    </ul>
+    <p class="empty" th:if="${#lists.isEmpty(rows)}">No rentals yet. Book one from the Cycles tab.</p>
+</main>
+</body>
+</html>

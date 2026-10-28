@@ -27,4 +27,7 @@ public interface BookingService {
 
     /** The resident's booking that has not been returned yet, if any. */
     Optional<CurrentRental> currentRental(long residentId);
+
+    /** All of the resident's rentals, newest first, for the History tab. */
+    List<HistoryEntry> history(long residentId);
 }

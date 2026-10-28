@@ -38,6 +38,11 @@ h1 { font-size: 1.25rem; margin: 0 0 .25rem; }
 .chip-BOOKED { color: var(--busy); background: #fff8e5; }
 .chip-ISSUED { color: #1f5fa8; background: #e8f0fb; }
 .chip-UNDER_REPAIR { color: var(--repair); background: #fdecea; }
+/* History tab: a rental's stage rather than a cycle's state. */
+.chip-Booked { color: var(--busy); background: #fff8e5; }
+.chip-Out { color: #1f5fa8; background: #e8f0fb; }
+.chip-Returned { color: #57606a; background: #eef0f2; }
+.late { color: var(--repair); font-size: .9rem; font-weight: 600; }
 
 .note, .empty { color: #57606a; font-size: .9rem; }
 

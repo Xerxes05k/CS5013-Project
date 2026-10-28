@@ -12,7 +12,7 @@
     </form>
 </div>
 
-<!-- active: which tab to highlight, "cycles", "rental" or "report".
+<!-- active: which tab to highlight, "cycles", "rental", "history" or "report".
      hasOpenRental comes from NavigationAdvice on every page. -->
 <nav th:fragment="tabs(active)" class="tabs" aria-label="Sections">
     <a class="tab" th:classappend="${active == 'cycles'} ? 'active'" th:href="@{/cycles}"
@@ -20,6 +20,8 @@
     <a class="tab" th:classappend="${active == 'rental'} ? 'active'" th:href="@{/rental}"
        th:aria-current="${active == 'rental'} ? 'page'">My cycle<span class="tab-dot" th:if="${hasOpenRental}"></span><span
             class="sr-only" th:if="${hasOpenRental}"> (you have a cycle)</span></a>
+    <a class="tab" th:classappend="${active == 'history'} ? 'active'" th:href="@{/history}"
+       th:aria-current="${active == 'history'} ? 'page'">History</a>
     <a class="tab" th:classappend="${active == 'report'} ? 'active'" th:href="@{/report}"
        th:aria-current="${active == 'report'} ? 'page'">Report</a>
 </nav>
