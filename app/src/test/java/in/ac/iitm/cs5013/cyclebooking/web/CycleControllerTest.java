@@ -73,7 +73,7 @@ class CycleControllerTest {
     @BeforeEach
     void setUp() {
         when(auth.currentResident(any())).thenReturn(ME);
-        when(booking.getAvailability()).thenReturn(List.of(new CycleStatus(7L, "JAM-07", CycleState.AVAILABLE)));
+        when(booking.getAvailability()).thenReturn(List.of(new CycleStatus(7L, "JAM-07", CycleState.AVAILABLE, List.of())));
         when(idVerification.scanCard(any())).thenReturn(ExtractedIdentity.unreadable());
         when(booking.createBooking(eq(ME), eq(7L), any()))
                 .thenThrow(new IdCheckFailedException("Could not read the roll number on your ID card."));
@@ -115,8 +115,8 @@ class CycleControllerTest {
     @Test
     void cyclesPageShowsEachCycleAsACardWithItsStateInWords() throws Exception {
         when(booking.getAvailability()).thenReturn(List.of(
-                new CycleStatus(7L, "JAM-07", CycleState.AVAILABLE),
-                new CycleStatus(8L, "JAM-08", CycleState.UNDER_REPAIR)));
+                new CycleStatus(7L, "JAM-07", CycleState.AVAILABLE, List.of()),
+                new CycleStatus(8L, "JAM-08", CycleState.UNDER_REPAIR, List.of())));
 
         mockMvc.perform(get("/cycles"))
                 .andExpect(content().string(Matchers.containsString("chip-AVAILABLE")))
@@ -129,8 +129,8 @@ class CycleControllerTest {
     void residentsOwnCycleIsMarkedAndNothingElseIsBookable() throws Exception {
         when(booking.currentRental(1L)).thenReturn(Optional.of(new CurrentRental(42L, "JAM-07",
                 CycleState.BOOKED, Instant.now(), null, IdCheck.CARD_SCAN, false)));
-        when(booking.getAvailability()).thenReturn(List.of(new CycleStatus(7L, "JAM-07", CycleState.BOOKED),
-                new CycleStatus(9L, "JAM-09", CycleState.AVAILABLE)));
+        when(booking.getAvailability()).thenReturn(List.of(new CycleStatus(7L, "JAM-07", CycleState.BOOKED, List.of()),
+                new CycleStatus(9L, "JAM-09", CycleState.AVAILABLE, List.of())));
 
         mockMvc.perform(get("/cycles"))
                 .andExpect(content().string(Matchers.containsString("card mine")))
