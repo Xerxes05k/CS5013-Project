@@ -1,6 +1,5 @@
 package in.ac.iitm.cs5013.cyclebooking.web;
 
-import in.ac.iitm.cs5013.cyclebooking.persistence.FlagSource;
 import in.ac.iitm.cs5013.cyclebooking.reporting.MaintenanceItem;
 import in.ac.iitm.cs5013.cyclebooking.reporting.ReportingService;
 import in.ac.iitm.cs5013.cyclebooking.reporting.UsageReport;
@@ -57,7 +56,12 @@ public class ReportController {
 
     private static FlagRow toRow(MaintenanceItem item) {
         String issue = item.label().equals("guard_note") ? "Guard note" : capitalise(item.label());
-        String reportedBy = item.source() == FlagSource.GUARD ? "Guard, at return" : "Resident comment";
+        // Exhaustive: a new FlagSource fails to compile here rather than showing the wrong reporter.
+        String reportedBy = switch (item.source()) {
+            case GUARD -> "Guard, at return";
+            case COMMENT -> "Resident comment";
+            case GS -> "GS";
+        };
         return new FlagRow(issue, reportedBy, item.words(), SHOWN.format(item.raisedAt()));
     }
 

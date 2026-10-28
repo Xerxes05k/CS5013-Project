@@ -69,6 +69,16 @@ class ReportControllerTest {
     }
 
     @Test
+    void flagRaisedByTheGsIsShownAsTheGsNotAsAResident() throws Exception {
+        when(reporting.getMaintenanceList()).thenReturn(List.of(new MaintenanceItem(4L, "JAM-03", "tyre",
+                FlagSource.GS, "flat on inspection", Instant.parse("2026-10-28T05:00:00Z"))));
+
+        mockMvc.perform(get("/report/maintenance"))
+                .andExpect(content().string(Matchers.containsString("<span>GS</span>")))
+                .andExpect(content().string(Matchers.not(Matchers.containsString("Resident comment"))));
+    }
+
+    @Test
     void maintenancePageWithNothingReportedSaysSo() throws Exception {
         when(reporting.getMaintenanceList()).thenReturn(List.of());
 
