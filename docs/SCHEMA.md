@@ -128,8 +128,8 @@ One row per rental, from booking to return. The row is never deleted; it is the 
 | `id` | integer | PK | `Long id` | |
 | `cycle_id` | bigint | NOT NULL | `Cycle cycle` | The cycle with the problem. |
 | `comment_id` | bigint | nullable | `Comment comment` | The comment that raised it. Null for guard flags. |
-| `label` | varchar(255) | NOT NULL | `String label` | Issue type. Today always `guard_note`. From week 5 the classifier labels, e.g. `chain`, `brakes`, `tyre`. |
-| `source` | varchar(255) | NOT NULL, CHECK in enum | `FlagSource source` | `GUARD` or `COMMENT`. |
+| `label` | varchar(255) | NOT NULL | `String label` | Issue type: a part name (`brakes`, `bell`, …) for a part the guard ticked at return, or `guard_note` for a guard's note that names no part. From week 5 also the classifier's labels, which are part names too. |
+| `source` | varchar(255) | NOT NULL, CHECK in enum | `FlagSource source` | `GUARD`, `COMMENT` or `GS`. |
 | `note` | varchar(500) | nullable | `String note` | The guard's words at return. Null for comment flags. |
 | `created_at` | timestamp | NOT NULL | `Instant createdAt` | |
 | `resolved_at` | timestamp | nullable | `Instant resolvedAt` | Null = still needs fixing. Nothing sets it yet (GS view, week 5). |
@@ -144,7 +144,9 @@ Stored as their name (`@Enumerated(EnumType.STRING)`), so reordering the Java en
 |---|---|---|
 | `CycleState` | `AVAILABLE`, `BOOKED`, `ISSUED`, `UNDER_REPAIR` | `cycles.state` |
 | `IdCheck` | `CARD_SCAN`, `TYPED_ROLL` | `bookings.id_check` |
-| `FlagSource` | `GUARD`, `COMMENT` | `maintenance_flags.source` |
+| `FlagSource` | `GUARD`, `COMMENT`, `GS` | `maintenance_flags.source` |
+| `Part` | `TYRE`, `BRAKES`, `CHAIN`, `SEAT`, `PEDAL`, `HANDLEBAR`, `LOCK`, `BELL` | Not stored yet (`cycle_parts`, §8). Return's `brokenParts`, `CycleStatus.knownIssues`, `PartStatus`. `critical()` true for the first six; `label()` is the lowercase name, which is also the classifier label. |
+| `PartCondition` | `OK`, `REPORTED`, `BROKEN` | Not stored yet (`cycle_parts`, §8). `PartStatus.condition`. |
 | `EligibilityResult.Reason` | `OK`, `OVERDUE_RETURN`, `ALREADY_HOLDING`, `WEEKLY_LIMIT` | Not stored. Returned by the Rule Engine, each value carries the message shown to the resident. |
 
 ---
@@ -180,6 +182,7 @@ classDiagram
         long id
         String label
         CycleState state
+        List~Part~ knownIssues
         bookable() boolean
     }
     class BookingConfirmation {
@@ -221,7 +224,8 @@ classDiagram
 | `ResidentIdentity` | `AuthService.currentResident` | every controller, `BookingService` | Who is logged in. Built from the `residents` row matching the login. |
 | `ExtractedIdentity` | `IdVerificationService.scanCard` | `BookingService.createBooking` | What OCR read. `confidence` is 0–100, the score of the roll number's **weakest** character. Never saved. |
 | `EligibilityResult` | `RuleService.checkEligibility` | `BookingService` | `allowed` plus the reason to show. |
-| `CycleStatus` | `BookingService.getAvailability` | `/cycles` page | One row per cycle. |
+| `CycleStatus` | `BookingService.getAvailability` | `/cycles` page | One row per cycle. `knownIssues` = parts not `OK`; empty until `cycle_parts` exists. |
+| `PartStatus` | `MaintenanceService.partsOf` | cycle detail page, GS Fleet view | One part's condition. `critical()` is read from the `Part`, not stored. Declared; implemented with `cycle_parts` (§8). |
 | `BookingConfirmation` | `BookingService.createBooking*` | `CycleController` | What the success message shows. |
 | `CurrentRental` | `BookingService.currentRental` | `/rental` page, `RentalController` | The open booking plus derived `overdue`. |
 | `UsageReport` / `CycleUsage` | `ReportingService` | `/report` page | Hours each cycle was out, last 7 days. No resident names. |
@@ -281,7 +285,7 @@ What each query is for. JPQL is written against entities. Spring derives the "de
 
 ## 8. Planned: cycle parts decide the cycle's state (ADR 0005)
 
-**Not built yet.** Target: week 5. Everything above describes the code as it is today. This section is the agreed design for the next step, from the mid-demo feedback that a cycle's properties should explain its next state.
+**Partly built.** The contract is in: the `Part` and `PartCondition` enums, `FlagSource.GS`, the `PartStatus` record and the new service signatures below. Still to build: the `cycle_parts` table, the fit-to-ride rule in `recordInspection`, and `partsOf` / `recordRepair`. This section is the agreed design, from the mid-demo feedback that a cycle's properties should explain its next state.
 
 ### New table and its links
 
@@ -366,4 +370,4 @@ Applied only when the cycle is back at the stand: at **return** and when the **G
 | `MaintenanceService` | new `CycleState recordRepair(long cycleId, Part part, String note)` (GS) |
 | `TransactionService` | `confirmReturn(bookingId, passcode, Set<Part> brokenParts, String note)` |
 | `BookingService` | `CycleStatus` gains `List<Part> knownIssues` (parts not `OK`) for the cycle list |
-| new record | `PartStatus(Part part, boolean critical, PartCondition condition, Instant updatedAt, String note)` |
+| new record | `PartStatus(Part part, PartCondition condition, Instant updatedAt, String note)` with `critical()` read from the part, so it can't disagree with the rule |

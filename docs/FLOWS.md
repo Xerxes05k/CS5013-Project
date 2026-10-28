@@ -128,7 +128,7 @@ Every `POST` ends in a redirect (post-redirect-get), so refreshing a page never 
 | POST | `/cycles/{id}/book-typed` | `CycleController.bookWithTypedRoll` | `createBookingWithTypedRoll` | `/rental` | same as above |
 | GET | `/rental` | `RentalController.myCycle` | `currentRental` | `rental.html` | `/cycles` if none |
 | POST | `/rental/pickup` (passcode) | `RentalController.pickup` | `confirmPickup` | `/rental` | `/rental` with error |
-| POST | `/rental/return` (passcode, guardNote) | `RentalController.giveBack` | `confirmReturn` | `/rental/comment` | `/rental` with error |
+| POST | `/rental/return` (passcode, guardNote, brokenParts…) | `RentalController.giveBack` | `confirmReturn` | `/rental/comment` | `/rental` with error |
 | GET | `/rental/comment` | `RentalController.commentBox` | — | `comment.html` | `/cycles` if no return in session |
 | POST | `/rental/comment` (text) | `RentalController.comment` | `submitComment` | `/cycles` | `/rental/comment` with error |
 | POST | `/rental/comment/skip` | `RentalController.skipComment` | — | `/cycles` | |
@@ -160,7 +160,7 @@ flowchart TD
     H --> I[Guard hands over cycle<br/>cycle ISSUED, 24 h clock starts]
     I --> J([Resident rides])
     J --> K["Back at stand: guard looks cycle over,<br/>resident types guard's remark + passcode<br/><i>Transaction.confirmReturn</i>"]
-    K --> L["Guard note becomes a GUARD flag<br/><i>Maintenance.recordGuardNote</i>"]
+    K --> L["Each broken part ticked, or the guard's note,<br/>becomes a GUARD flag<br/><i>Maintenance.recordInspection</i>"]
     L --> M["Optional comment box<br/><i>Maintenance.submitComment</i>"]
     M --> C
     I -.-> N["GS/Warden: weekly usage hours<br/><i>Reporting</i>"]
@@ -334,7 +334,7 @@ The return and the guard's note are saved in **one transaction**: if saving the 
 
 ```mermaid
 flowchart TD
-    S(["POST /rental/return<br/>(passcode, guardNote)"]) --> C["currentRental(own id)"]
+    S(["POST /rental/return<br/>(passcode, guardNote, brokenParts)"]) --> C["currentRental(own id)"]
     C --> T
 
     subgraph T["TransactionService.confirmReturn — one @Transactional"]
@@ -347,10 +347,10 @@ flowchart TD
         L -- yes --> P{passcode OK?}
         P -- no --> X4[["reject 'Wrong passcode'"]]
         P -- yes --> W["booking.returnedAt = now<br/>cycle.lastReturnedAt = now<br/>cycle.state = AVAILABLE"]
-        W --> G["MaintenanceService.recordGuardNote"]
-        G --> GB{note blank?}
+        W --> G["MaintenanceService.recordInspection"]
+        G --> GB{"no parts ticked<br/>AND note blank?"}
         GB -- yes --> GD[nothing saved]
-        GB -- no --> GF["INSERT maintenance_flags<br/>(cycle, comment=null, 'guard_note',<br/>GUARD, now, note)"]
+        GB -- no --> GF["INSERT maintenance_flags, GUARD, now, note:<br/>one per broken part (label = part),<br/>or one 'guard_note' if no part ticked"]
     end
 
     X1 & X2 & X3 & X4 --> E["error → /rental"]
