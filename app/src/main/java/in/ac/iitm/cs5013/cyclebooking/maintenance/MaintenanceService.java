@@ -47,4 +47,18 @@ public interface MaintenanceService {
      * @param brokenParts never null; empty when the guard found nothing broken
      */
     CycleState recordInspection(long bookingId, Set<Part> brokenParts, String note);
+
+    /**
+     * The 8 parts of a cycle with their current condition, in {@link Part} order: the
+     * cycle detail page's parts grid and the GS's Fleet view.
+     */
+    List<PartStatus> partsOf(long cycleId);
+
+    /**
+     * The GS records that a part has been repaired: it goes back to OK, a GS flag is
+     * written, and the cycle takes the state the fit-to-ride rule gives, which is
+     * returned. Not applied while the cycle is BOOKED or ISSUED, so a repair never takes
+     * a cycle from someone mid-rental (ADR 0005).
+     */
+    CycleState recordRepair(long cycleId, Part part, String note);
 }
