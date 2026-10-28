@@ -4,11 +4,14 @@ import in.ac.iitm.cs5013.cyclebooking.persistence.Booking;
 import in.ac.iitm.cs5013.cyclebooking.persistence.BookingRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Cycle;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleRepository;
+import in.ac.iitm.cs5013.cyclebooking.persistence.MaintenanceFlag;
+import in.ac.iitm.cs5013.cyclebooking.persistence.MaintenanceFlagRepository;
 import in.ac.iitm.cs5013.cyclebooking.reporting.UsageReport.CycleUsage;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,11 +26,14 @@ class DefaultReportingService implements ReportingService {
 
     private final BookingRepository bookings;
     private final CycleRepository cycles;
+    private final MaintenanceFlagRepository flags;
     private final Clock clock;
 
-    DefaultReportingService(BookingRepository bookings, CycleRepository cycles, Clock clock) {
+    DefaultReportingService(BookingRepository bookings, CycleRepository cycles, MaintenanceFlagRepository flags,
+            Clock clock) {
         this.bookings = bookings;
         this.cycles = cycles;
+        this.flags = flags;
         this.clock = clock;
     }
 
@@ -57,6 +63,22 @@ class DefaultReportingService implements ReportingService {
             rows.add(new CycleUsage(cycle.getLabel(), count, used.toMinutes() / 60.0));
         }
         return new UsageReport(from, to, rows);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<MaintenanceItem> getMaintenanceList() {
+        // The query gives newest first; a stable sort by label keeps that order within each cycle.
+        return flags.findByResolvedAtIsNullOrderByCreatedAtDesc().stream()
+                .map(DefaultReportingService::toItem)
+                .sorted(Comparator.comparing(MaintenanceItem::cycleLabel))
+                .toList();
+    }
+
+    private static MaintenanceItem toItem(MaintenanceFlag f) {
+        String words = f.getComment() != null ? f.getComment().getText() : f.getNote();
+        return new MaintenanceItem(f.getId(), f.getCycle().getLabel(), f.getLabel(), f.getSource(), words,
+                f.getCreatedAt());
     }
 
     /** The part of [pickup, return-or-now) that falls inside [from, to). */

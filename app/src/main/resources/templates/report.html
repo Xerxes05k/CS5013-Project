@@ -9,6 +9,7 @@
 <body>
 <div th:replace="~{fragments/layout :: topbar}"></div>
 <nav th:replace="~{fragments/layout :: tabs('report')}"></nav>
+<nav th:replace="~{fragments/layout :: subtabs('usage')}"></nav>
 <header>
     <h1>Cycle usage, last 7 days</h1>
     <p class="summary"><span th:text="${from}">27 Sep</span> to <span th:text="${to}">4 Oct</span></p>

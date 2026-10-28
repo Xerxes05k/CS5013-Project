@@ -69,6 +69,7 @@ List<CycleStatus>       getAvailability();
 BookingConfirmation     createBooking(ResidentIdentity r, long cycleId, ExtractedIdentity scannedCard);
 BookingConfirmation     createBookingWithTypedRoll(ResidentIdentity r, long cycleId, String typedRoll);
 Optional<CurrentRental> currentRental(long residentId);
+List<HistoryEntry>      history(long residentId);          // the History tab, newest first
 ```
 
 `createBookingWithTypedRoll` is the fallback when the card will not scan. The web layer offers it only after 3 failed scans. The booking is then marked `TYPED_ROLL` and the guard is asked to check the physical card at pickup.
@@ -99,7 +100,7 @@ GS/Warden-facing weekly view.
 
 ```java
 UsageReport           getWeeklyUsageReport();
-List<MaintenanceFlag> getMaintenanceList();
+List<MaintenanceItem> getMaintenanceList();   // open flags, each with the guard's or resident's words
 ```
 
 ### 8. Persistence Module — `persistence`
