@@ -22,23 +22,22 @@ h1 { font-size: 1.25rem; margin: 0 0 .25rem; }
 
 .summary { margin: 0 0 1rem; color: #57606a; }
 
-.cycle-list { list-style: none; margin: 0; padding: 0; }
+/* Cycle cards (docs/UI.md §2-3). The chip's colour pairs are dark text on a light tint,
+   each well above 4.5:1 contrast. */
+.cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .75rem; }
+.card { padding: .9rem 1rem; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.card.mine { border: 2px solid #1f5fa8; }
+.card-head, .card-foot { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.card-foot { margin-top: .5rem; min-height: 44px; }
+.card-note { color: #57606a; font-size: .9rem; }
 
-.cycle {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    padding: .9rem .75rem;
-    border-bottom: 1px solid var(--line);
-}
+.label { font-weight: 600; font-size: 1.1rem; }
 
-.label { font-weight: 600; }
-
-.state { font-size: .9rem; margin-left: auto; }
-.state-AVAILABLE .state { color: var(--free); }
-.state-BOOKED .state, .state-ISSUED .state { color: var(--busy); }
-.state-UNDER_REPAIR .state { color: var(--repair); }
+.chip { padding: .2rem .65rem; border-radius: 999px; font-size: .85rem; font-weight: 600; white-space: nowrap; }
+.chip-AVAILABLE { color: var(--free); background: #e6f4ea; }
+.chip-BOOKED { color: var(--busy); background: #fff8e5; }
+.chip-ISSUED { color: #1f5fa8; background: #e8f0fb; }
+.chip-UNDER_REPAIR { color: var(--repair); background: #fdecea; }
 
 .note, .empty { color: #57606a; font-size: .9rem; }
 
@@ -62,11 +61,16 @@ button {
     color: #fff;
 }
 
-.error { color: var(--repair); }
-.notice { color: var(--free); }
+/* Messages: a tinted bar at the top of the content, so a result is hard to miss. */
+.error, .notice { padding: .65rem .85rem; border-radius: 8px; }
+.error { color: var(--repair); background: #fdecea; }
+.notice { color: var(--free); background: #e6f4ea; }
 
 a.book {
-    padding: .5rem .9rem;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: .5rem 1.1rem;
     border-radius: 6px;
     background: #1b1f24;
     color: #fff;

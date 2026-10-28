@@ -19,13 +19,16 @@ import in.ac.iitm.cs5013.cyclebooking.auth.ResidentIdentity;
 import in.ac.iitm.cs5013.cyclebooking.auth.SecurityConfig;
 import in.ac.iitm.cs5013.cyclebooking.booking.BookingConfirmation;
 import in.ac.iitm.cs5013.cyclebooking.booking.BookingService;
+import in.ac.iitm.cs5013.cyclebooking.booking.CurrentRental;
 import in.ac.iitm.cs5013.cyclebooking.booking.CycleStatus;
 import in.ac.iitm.cs5013.cyclebooking.booking.IdCheckFailedException;
 import in.ac.iitm.cs5013.cyclebooking.idverify.ExtractedIdentity;
 import in.ac.iitm.cs5013.cyclebooking.idverify.IdVerificationService;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
+import in.ac.iitm.cs5013.cyclebooking.persistence.IdCheck;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -107,5 +110,31 @@ class CycleControllerTest {
         mockMvc.perform(post("/cycles/7/book-typed").param("rollNumber", "CE24B128").session(session).with(csrf()))
                 .andExpect(redirectedUrl("/rental"));
         verify(booking).createBookingWithTypedRoll(ME, 7L, "CE24B128");
+    }
+
+    @Test
+    void cyclesPageShowsEachCycleAsACardWithItsStateInWords() throws Exception {
+        when(booking.getAvailability()).thenReturn(List.of(
+                new CycleStatus(7L, "JAM-07", CycleState.AVAILABLE),
+                new CycleStatus(8L, "JAM-08", CycleState.UNDER_REPAIR)));
+
+        mockMvc.perform(get("/cycles"))
+                .andExpect(content().string(Matchers.containsString("chip-AVAILABLE")))
+                .andExpect(content().string(Matchers.containsString("Ready to book")))
+                .andExpect(content().string(Matchers.containsString("chip-UNDER_REPAIR")))
+                .andExpect(content().string(Matchers.containsString("Being repaired, can't be booked")));
+    }
+
+    @Test
+    void residentsOwnCycleIsMarkedAndNothingElseIsBookable() throws Exception {
+        when(booking.currentRental(1L)).thenReturn(Optional.of(new CurrentRental(42L, "JAM-07",
+                CycleState.BOOKED, Instant.now(), null, IdCheck.CARD_SCAN, false)));
+        when(booking.getAvailability()).thenReturn(List.of(new CycleStatus(7L, "JAM-07", CycleState.BOOKED),
+                new CycleStatus(9L, "JAM-09", CycleState.AVAILABLE)));
+
+        mockMvc.perform(get("/cycles"))
+                .andExpect(content().string(Matchers.containsString("card mine")))
+                .andExpect(content().string(Matchers.containsString("Your cycle")))
+                .andExpect(content().string(Matchers.not(Matchers.containsString("/cycles/9/verify"))));
     }
 }
