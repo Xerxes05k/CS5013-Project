@@ -7,6 +7,7 @@ import in.ac.iitm.cs5013.cyclebooking.persistence.Cycle;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Set;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,7 +70,7 @@ class DefaultTransactionService implements TransactionService {
         cycle.setLastReturnedAt(now);
         cycle.setState(CycleState.AVAILABLE);
         // Same transaction: if saving the note fails, the return is undone too.
-        maintenance.recordGuardNote(bookingId, guardConditionNote);
+        maintenance.recordInspection(bookingId, Set.of(), guardConditionNote);
         return cycle.getState();
     }
 

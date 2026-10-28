@@ -1,7 +1,10 @@
 package in.ac.iitm.cs5013.cyclebooking.maintenance;
 
 import in.ac.iitm.cs5013.cyclebooking.persistence.MaintenanceFlag;
+import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
+import in.ac.iitm.cs5013.cyclebooking.persistence.Part;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Maintenance Comment Module: what residents and the guard say about a cycle's
@@ -31,9 +34,17 @@ public interface MaintenanceService {
     List<MaintenanceFlag> submitComment(long bookingId, String text);
 
     /**
-     * Records the guard's note on the cycle's condition, made at return, as a GUARD flag
-     * on the cycle. A blank note records nothing. Called by the Pickup/Return Module
-     * inside the return, so the note and the return are saved together or not at all.
+     * Records what the guard found when the cycle came back (ADR 0005). Each part in
+     * {@code brokenParts} becomes a GUARD flag labelled with that part and carrying the
+     * guard's note. A note with no part ticked becomes one {@link #GUARD_NOTE_LABEL}
+     * flag; no parts and a blank note record nothing.
+     *
+     * Returns the state the cycle should take after the return. Until each cycle's part
+     * conditions are stored, that is always AVAILABLE; the fit-to-ride rule replaces it
+     * in the cycle-parts PR. Called by the Pickup/Return Module inside the return, so the
+     * flags and the return are saved together or not at all.
+     *
+     * @param brokenParts never null; empty when the guard found nothing broken
      */
-    void recordGuardNote(long bookingId, String note);
+    CycleState recordInspection(long bookingId, Set<Part> brokenParts, String note);
 }
