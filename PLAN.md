@@ -72,12 +72,12 @@ Every item below from week 4 on has a tag: **[BE]** backend, **[FE]** frontend, 
 
 **Goal: absorb mid-demo feedback; start the maintenance side.**
 
-- [ ] Fix whatever broke in the mid-demo (log each item here)
+- [x] Fix whatever broke in the mid-demo (log each item here; the feedback is in PROGRESS.md, Week 5)
   - Mid-demo feedback (12 Oct): show the technical side, not just process; split work properly; commit step by step, not weekly
   - [x] Data schema: ER diagram, tables, enums, records, integrity rules (`docs/SCHEMA.md`)
   - [x] Developer architecture and flowcharts for every request (`docs/FLOWS.md`)
   - [x] Work split: backend / frontend owners and the PR workflow (see "Team and work split" above)
-  - [ ] Switch to small commits per change, merged through reviewed PRs: first PR is these docs
+  - [x] Switch to small commits per change, merged through reviewed PRs: first PR is these docs (PR #2; every change since goes through one)
   - Further feedback: the UI is one plain page with no navigation; a cycle has no properties that explain its next state
   - [x] Design: cycle parts decide the cycle's state (ADR 0005, `docs/SCHEMA.md` §8, `docs/FLOWS.md` §9)
   - [x] Design: tab navigation and page wireframes (`docs/UI.md`)
@@ -87,7 +87,7 @@ Every item below from week 4 on has a tag: **[BE]** backend, **[FE]** frontend, 
   - [x] **[BE · Aditya]** `BookingService.history(residentId)` returning records + test; **[FE · Aditya]** History tab
 - [x] **Maintenance Comment Module (v1):** post-return comment box, stored; guard condition note at check-in
 - [x] Start the labeled phrase dataset for the classifier (target ≥100 comments across ~8 issue labels)
-- [ ] Sunday PROGRESS entry (PR)
+- [x] Sunday PROGRESS entry (PR) (written 11 Oct, before the mid-demo)
 
 ## Week 5 — 17–23 Oct
 
@@ -97,15 +97,15 @@ Every item below from week 4 on has a tag: **[BE]** backend, **[FE]** frontend, 
 - [ ] **[BE · Yashas]** `CyclePart` entity + repository; 8 `OK` rows per cycle in `data.sql` (JAM-05: brakes `BROKEN`)
 - [ ] **[BE · Yashas]** `recordInspection` with the fit-to-ride rule; tests: broken brakes → `UNDER_REPAIR`, broken bell → `AVAILABLE`
 - [ ] **[BE · Yashas]** `confirmReturn` sets the state `recordInspection` returns; `recordRepair` for the GS
-- [ ] **[BE · Aditya]** `CycleStatus.knownIssues` and `partsOf` for the cards and cycle detail
-- [ ] **[FE · Aditya]** Known issues on cycle cards; cycle detail page with the parts grid; parts checklist on the return form
+- [x] **[BE · Aditya]** `CycleStatus.knownIssues` and `partsOf` for the cards and cycle detail (declared by Yashas in the contract PR #9; filled by the cycle-parts PR)
+- [ ] **[FE · Aditya]** Known issues on cycle cards; cycle detail page with the parts grid; parts checklist on the return form (PRs #11, #12; the detail page, #13, waits for `partsOf`)
 - [ ] **[BE · Yashas] CommentClassifier:** Apache OpenNLP model trained on the labeled set; precision/recall recorded in PROGRESS
 - [ ] **[BE · Yashas]** `MaintenanceService.submitComment` → flags (ADR 0003)
 - [ ] **[FE · Aditya]** after a comment, show the raw comment next to the flags it raised
-- [ ] **[BE · Aditya] Reporting Module (v2):** `getMaintenanceList` combining guard notes + auto-flags; GS can mark a flag resolved
-- [ ] **[FE · Aditya]** GS tab with Usage · Maintenance · Fleet sub-tabs; maintenance list shows raw comment / guard words and a "Repaired" button (UI.md §2)
+- [x] **[BE · Aditya] Reporting Module (v2):** `getMaintenanceList` combining guard notes + auto-flags; GS can mark a flag resolved (list in PR #7; resolving became `recordRepair` in ADR 0005)
+- [ ] **[FE · Aditya]** GS tab with Usage · Maintenance · Fleet sub-tabs; maintenance list shows raw comment / guard words and a "Repaired" button (UI.md §2) (Usage and Maintenance done in PR #7; Fleet and the Repaired button left)
 - [ ] **[BE · Yashas]** GS role in `SecurityConfig`: only the GS sees `/report` and the maintenance list
-- [ ] Sunday PROGRESS entry (PR)
+- [x] Sunday PROGRESS entry (PR) (written late, on 29 Oct)
 
 ## Week 6 — 24–30 Oct
 
