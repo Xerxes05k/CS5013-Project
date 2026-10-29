@@ -35,6 +35,10 @@
                     <span th:case="'UNDER_REPAIR'">Under repair</span>
                 </span>
             </div>
+            <!-- ADR 0005: parts someone reported or the guard found broken, so residents
+                 know before booking. A broken critical part means the cycle is under repair. -->
+            <p class="issues" th:unless="${#lists.isEmpty(cycle.knownIssues)}"
+               th:text="|Known issues: ${#strings.listJoin(cycle.knownIssues.![label()], ', ')}|">Known issues: bell</p>
             <div class="card-foot">
                 <span class="card-note" th:if="${mine}">Your cycle</span>
                 <span class="card-note" th:unless="${mine}" th:switch="${cycle.state.name()}">
