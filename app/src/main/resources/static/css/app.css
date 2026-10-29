@@ -32,6 +32,18 @@ h1 { font-size: 1.25rem; margin: 0 0 .25rem; }
 .card-note { color: #57606a; font-size: .9rem; }
 
 .label { font-weight: 600; font-size: 1.1rem; }
+a.label { color: inherit; }
+
+/* Cycle detail: the 8 parts (ADR 0005). Condition in words and symbol, never colour alone. */
+.part-grid { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.part-tile { display: flex; flex-direction: column; gap: .15rem; padding: .7rem .8rem; border: 1px solid var(--line); border-radius: 10px; }
+.part-name { font-weight: 600; }
+.part-name small { color: var(--repair); font-weight: 400; font-size: .75rem; }
+.part-condition { font-size: .9rem; }
+.part-OK .part-condition { color: var(--free); }
+.part-REPORTED { background: #fff8e5; } .part-REPORTED .part-condition { color: var(--busy); }
+.part-BROKEN { background: #fdecea; } .part-BROKEN .part-condition { color: var(--repair); font-weight: 600; }
+.part-note { font-size: .85rem; color: #57606a; }
 
 .chip { padding: .2rem .65rem; border-radius: 999px; font-size: .85rem; font-weight: 600; white-space: nowrap; }
 .chip-AVAILABLE { color: var(--free); background: #e6f4ea; }
