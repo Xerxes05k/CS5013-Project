@@ -43,7 +43,8 @@ class DefaultBookingService implements BookingService {
     @Transactional(readOnly = true)
     public List<CycleStatus> getAvailability() {
         return cycles.findAllByOrderByLabelAsc().stream()
-                .map(c -> new CycleStatus(c.getId(), c.getLabel(), c.getState()))
+                // knownIssues is filled from each cycle's parts once cycle_parts exists.
+                .map(c -> new CycleStatus(c.getId(), c.getLabel(), c.getState(), List.of()))
                 .toList();
     }
 

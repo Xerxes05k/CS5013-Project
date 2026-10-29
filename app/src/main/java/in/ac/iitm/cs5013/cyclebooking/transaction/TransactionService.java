@@ -1,6 +1,8 @@
 package in.ac.iitm.cs5013.cyclebooking.transaction;
 
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
+import in.ac.iitm.cs5013.cyclebooking.persistence.Part;
+import java.util.Set;
 
 /**
  * Pickup/Return Module: the guard-witnessed step at the cycle stand. The resident
@@ -17,8 +19,11 @@ public interface TransactionService {
 
     /**
      * ISSUED -> AVAILABLE. Returns the cycle's new state. The guard looks the cycle
-     * over and the resident types what the guard says into {@code guardConditionNote};
-     * blank means nothing wrong. A non-blank note is passed to the Maintenance Module.
+     * over; the resident ticks the parts the guard found broken and types anything else
+     * the guard says into {@code guardConditionNote}. Nothing ticked and a blank note
+     * mean nothing wrong. Both go to the Maintenance Module (ADR 0005).
+     *
+     * @param brokenParts never null; empty when the guard found nothing broken
      */
-    CycleState confirmReturn(long bookingId, String passcode, String guardConditionNote);
+    CycleState confirmReturn(long bookingId, String passcode, Set<Part> brokenParts, String guardConditionNote);
 }

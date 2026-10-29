@@ -4,11 +4,15 @@ import in.ac.iitm.cs5013.cyclebooking.persistence.Booking;
 import in.ac.iitm.cs5013.cyclebooking.persistence.BookingRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Comment;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CommentRepository;
+import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
 import in.ac.iitm.cs5013.cyclebooking.persistence.FlagSource;
 import in.ac.iitm.cs5013.cyclebooking.persistence.MaintenanceFlag;
 import in.ac.iitm.cs5013.cyclebooking.persistence.MaintenanceFlagRepository;
+import in.ac.iitm.cs5013.cyclebooking.persistence.Part;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,9 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 class DefaultMaintenanceService implements MaintenanceService {
-
-    /** Label of a flag raised by the guard's note, until the classifier labels notes too. */
-    static final String GUARD_NOTE_LABEL = "guard_note";
 
     private final BookingRepository bookings;
     private final CommentRepository comments;
@@ -62,17 +63,39 @@ class DefaultMaintenanceService implements MaintenanceService {
 
     @Override
     @Transactional
-    public void recordGuardNote(long bookingId, String note) {
+    public CycleState recordInspection(long bookingId, Set<Part> brokenParts, String note) {
         String trimmed = note == null ? "" : note.strip();
-        if (trimmed.isEmpty()) {
-            return;
-        }
         if (trimmed.length() > MAX_GUARD_NOTE_LENGTH) {
             throw new IllegalArgumentException("Guard note longer than " + MAX_GUARD_NOTE_LENGTH + " characters");
         }
+        if (brokenParts.isEmpty() && trimmed.isEmpty()) {
+            return CycleState.AVAILABLE;
+        }
         Booking booking = bookings.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("No booking " + bookingId));
-        flags.save(new MaintenanceFlag(booking.getCycle(), null, GUARD_NOTE_LABEL, FlagSource.GUARD,
-                clock.instant(), trimmed));
+        Instant now = clock.instant();
+        String words = trimmed.isEmpty() ? null : trimmed;
+
+        if (brokenParts.isEmpty()) {
+            flags.save(new MaintenanceFlag(booking.getCycle(), null, GUARD_NOTE_LABEL, FlagSource.GUARD, now, words));
+        }
+        // Declaration order, so the flags are saved in the same order every time.
+        brokenParts.stream().sorted().forEach(part -> flags.save(
+                new MaintenanceFlag(booking.getCycle(), null, part.label(), FlagSource.GUARD, now, words)));
+        return CycleState.AVAILABLE;
+    }
+
+    // partsOf and recordRepair read and write each cycle's part conditions, which need
+    // the cycle_parts table. They are declared now so the frontend can build against
+    // them (interface first, PLAN.md); the cycle-parts PR implements both.
+
+    @Override
+    public List<PartStatus> partsOf(long cycleId) {
+        throw new UnsupportedOperationException("partsOf arrives with the cycle_parts table");
+    }
+
+    @Override
+    public CycleState recordRepair(long cycleId, Part part, String note) {
+        throw new UnsupportedOperationException("recordRepair arrives with the cycle_parts table");
     }
 }

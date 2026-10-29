@@ -10,6 +10,7 @@ import in.ac.iitm.cs5013.cyclebooking.auth.ResidentDetailsService;
 import in.ac.iitm.cs5013.cyclebooking.auth.ResidentIdentity;
 import in.ac.iitm.cs5013.cyclebooking.auth.SecurityConfig;
 import in.ac.iitm.cs5013.cyclebooking.booking.BookingService;
+import in.ac.iitm.cs5013.cyclebooking.maintenance.MaintenanceService;
 import in.ac.iitm.cs5013.cyclebooking.persistence.FlagSource;
 import in.ac.iitm.cs5013.cyclebooking.reporting.MaintenanceItem;
 import in.ac.iitm.cs5013.cyclebooking.reporting.ReportingService;
@@ -55,9 +56,9 @@ class ReportControllerTest {
     void maintenancePageGroupsIssuesByCycleWithTheReportersWords() throws Exception {
         Instant t = Instant.parse("2026-10-11T13:10:00Z");
         when(reporting.getMaintenanceList()).thenReturn(List.of(
-                new MaintenanceItem(1L, "JAM-02", "guard_note", FlagSource.GUARD, "front brake loose", t),
+                new MaintenanceItem(1L, "JAM-02", MaintenanceService.GUARD_NOTE_LABEL, FlagSource.GUARD, "front brake loose", t),
                 new MaintenanceItem(2L, "JAM-02", "chain", FlagSource.COMMENT, "chain keeps slipping off", t),
-                new MaintenanceItem(3L, "JAM-05", "guard_note", FlagSource.GUARD, "bell missing", t)));
+                new MaintenanceItem(3L, "JAM-05", MaintenanceService.GUARD_NOTE_LABEL, FlagSource.GUARD, "bell missing", t)));
 
         mockMvc.perform(get("/report/maintenance"))
                 .andExpect(content().string(Matchers.containsString("2 open issues")))
@@ -66,6 +67,16 @@ class ReportControllerTest {
                 .andExpect(content().string(Matchers.containsString("Resident comment")))
                 .andExpect(content().string(Matchers.containsString("chain keeps slipping off")))
                 .andExpect(content().string(Matchers.containsString("class=\"subtab active\" href=\"/report/maintenance\"")));
+    }
+
+    @Test
+    void flagRaisedByTheGsIsShownAsTheGsNotAsAResident() throws Exception {
+        when(reporting.getMaintenanceList()).thenReturn(List.of(new MaintenanceItem(4L, "JAM-03", "tyre",
+                FlagSource.GS, "flat on inspection", Instant.parse("2026-10-28T05:00:00Z"))));
+
+        mockMvc.perform(get("/report/maintenance"))
+                .andExpect(content().string(Matchers.containsString("<span>GS</span>")))
+                .andExpect(content().string(Matchers.not(Matchers.containsString("Resident comment"))));
     }
 
     @Test

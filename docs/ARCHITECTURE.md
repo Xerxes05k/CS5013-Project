@@ -79,21 +79,23 @@ The guard-witnessed step at the cycle stand. The resident enters their passcode 
 
 ```java
 CycleState confirmPickup(long bookingId, String passcode);
-CycleState confirmReturn(long bookingId, String passcode, String guardConditionNote);
+CycleState confirmReturn(long bookingId, String passcode, Set<Part> brokenParts, String guardConditionNote);
 ```
 
-The passcode is the resident's login passcode, checked against the same BCrypt hash. At return the guard looks the cycle over and the resident types what the guard says into `guardConditionNote` (blank = fine). A non-blank note goes to `MaintenanceService.recordGuardNote` inside the same transaction, so the return and the note are saved together or not at all.
+The passcode is the resident's login passcode, checked against the same BCrypt hash. At return the guard looks the cycle over; the resident ticks the parts the guard found broken (`brokenParts`, empty = none) and types anything else the guard says into `guardConditionNote`. Both go to `MaintenanceService.recordInspection` inside the same transaction, so the return and the guard's findings are saved together or not at all.
 
 ### 6. Maintenance Comment Module — `maintenance`
 Post-return free-text comment box. Comments go through a small OpenNLP classifier trained on our labeled phrase set. The raw comment is always shown alongside the flags (ADR 0003).
 
 ```java
 List<MaintenanceFlag> submitComment(long bookingId, String text);
-void                  recordGuardNote(long bookingId, String note);   // from confirmReturn
+CycleState            recordInspection(long bookingId, Set<Part> brokenParts, String note);  // from confirmReturn
+List<PartStatus>      partsOf(long cycleId);                          // ADR 0005, with cycle_parts
+CycleState            recordRepair(long cycleId, Part part, String note);  // GS, ADR 0005, with cycle_parts
 List<String>          classify(String text);          // CommentClassifier (week 5)
 ```
 
-v1 (week 4) stores the comment, one per returned booking, and turns a guard's note into a `GUARD` flag on the cycle, with the guard's words in `MaintenanceFlag.note`. `submitComment` raises no flags until the week-5 classifier. The resident gets the comment box right after a confirmed return. Its booking id comes from the session, never from the form. Training data for the classifier is in `app/src/main/resources/maintenance/labelled-comments.tsv`.
+v1 (week 4) stores the comment, one per returned booking, and turns the guard's findings into `GUARD` flags on the cycle: one per broken part, labelled with the part (`brakes`, `bell`, …), or one `guard_note` flag for a note that names no part, with the guard's words in `MaintenanceFlag.note`. `partsOf` and `recordRepair` are declared for the cycle-parts work (ADR 0005) and throw until the `cycle_parts` table exists; until then `recordInspection` returns `AVAILABLE`. `submitComment` raises no flags until the week-5 classifier. The resident gets the comment box right after a confirmed return. Its booking id comes from the session, never from the form. Training data for the classifier is in `app/src/main/resources/maintenance/labelled-comments.tsv`.
 
 ### 7. Reporting Module — `reporting`
 GS/Warden-facing weekly view.

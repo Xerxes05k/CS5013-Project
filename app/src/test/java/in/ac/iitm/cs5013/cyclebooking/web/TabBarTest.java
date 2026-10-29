@@ -58,7 +58,7 @@ class TabBarTest {
     @BeforeEach
     void setUp() {
         when(auth.currentResident(any())).thenReturn(ME);
-        when(booking.getAvailability()).thenReturn(List.of(new CycleStatus(7L, "JAM-07", CycleState.AVAILABLE)));
+        when(booking.getAvailability()).thenReturn(List.of(new CycleStatus(7L, "JAM-07", CycleState.AVAILABLE, List.of())));
         when(booking.currentRental(1L)).thenReturn(Optional.empty());
     }
 

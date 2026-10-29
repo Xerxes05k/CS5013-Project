@@ -1,7 +1,9 @@
 package in.ac.iitm.cs5013.cyclebooking.persistence;
 
-/** Where a maintenance flag came from: a guard's check-in note or a resident's return comment. */
+/** Who raised a maintenance flag: the guard at return, a resident's comment, or the GS. */
 public enum FlagSource {
     GUARD,
-    COMMENT
+    COMMENT,
+    /** A repair, or a fault the GS found on inspection (ADR 0005). */
+    GS
 }

@@ -7,12 +7,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import in.ac.iitm.cs5013.cyclebooking.persistence.Part;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -21,8 +25,9 @@ import org.junit.jupiter.api.Test;
  */
 class LabelledCommentsTest {
 
-    private static final Set<String> LABELS =
-            Set.of("chain", "brakes", "tyre", "seat", "pedal", "handlebar", "lock", "bell", "none");
+    /** Every part's label, plus "none". A label that isn't a part fails here (ADR 0005). */
+    private static final Set<String> LABELS = Stream.concat(
+            Arrays.stream(Part.values()).map(Part::label), Stream.of("none")).collect(Collectors.toSet());
 
     private record Row(List<String> labels, String text, String source) {
     }

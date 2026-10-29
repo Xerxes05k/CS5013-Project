@@ -2,6 +2,7 @@ package in.ac.iitm.cs5013.cyclebooking.maintenance;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 import in.ac.iitm.cs5013.cyclebooking.persistence.Booking;
 import in.ac.iitm.cs5013.cyclebooking.persistence.BookingRepository;
@@ -9,13 +10,17 @@ import in.ac.iitm.cs5013.cyclebooking.persistence.Comment;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CommentRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Cycle;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleRepository;
+import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
 import in.ac.iitm.cs5013.cyclebooking.persistence.FlagSource;
 import in.ac.iitm.cs5013.cyclebooking.persistence.IdCheck;
+import in.ac.iitm.cs5013.cyclebooking.persistence.MaintenanceFlag;
 import in.ac.iitm.cs5013.cyclebooking.persistence.MaintenanceFlagRepository;
+import in.ac.iitm.cs5013.cyclebooking.persistence.Part;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Resident;
 import in.ac.iitm.cs5013.cyclebooking.persistence.ResidentRepository;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,7 +29,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 /**
  * Maintenance v1 (week 4): the comment is stored exactly as the resident wrote it
- * (trimmed), once per returned booking, and a guard's note becomes a GUARD flag.
+ * (trimmed), once per returned booking, and the guard's findings become GUARD flags.
  */
 @SpringBootTest
 class DefaultMaintenanceServiceTest {
@@ -116,21 +121,32 @@ class DefaultMaintenanceServiceTest {
     }
 
     @Test
-    void recordGuardNote_raisesGuardFlagWithTheGuardsWords() {
-        maintenance.recordGuardNote(returnedId, "rear tyre soft");
+    void recordInspection_noteWithNoPartTicked_raisesOneGuardNoteFlag() {
+        maintenance.recordInspection(returnedId, Set.of(), "rear tyre soft");
 
         assertThat(flags.findByCycleId(cycleId)).singleElement().satisfies(flag -> {
             assertThat(flag.getSource()).isEqualTo(FlagSource.GUARD);
-            assertThat(flag.getLabel()).isEqualTo(DefaultMaintenanceService.GUARD_NOTE_LABEL);
+            assertThat(flag.getLabel()).isEqualTo(MaintenanceService.GUARD_NOTE_LABEL);
             assertThat(flag.getNote()).isEqualTo("rear tyre soft");
             assertThat(flag.getResolvedAt()).isNull();
         });
     }
 
     @Test
-    void recordGuardNote_blankRecordsNothing() {
-        maintenance.recordGuardNote(returnedId, "");
-        maintenance.recordGuardNote(returnedId, null);
+    void recordInspection_raisesOneGuardFlagPerBrokenPartWithTheGuardsWords() {
+        maintenance.recordInspection(returnedId, Set.of(Part.BELL, Part.BRAKES), "front brake loose");
+
+        assertThat(flags.findByCycleId(cycleId))
+                .extracting(MaintenanceFlag::getLabel, MaintenanceFlag::getSource, MaintenanceFlag::getNote)
+                .containsExactlyInAnyOrder(
+                        tuple("brakes", FlagSource.GUARD, "front brake loose"),
+                        tuple("bell", FlagSource.GUARD, "front brake loose"));
+    }
+
+    @Test
+    void recordInspection_nothingFound_recordsNothingAndLeavesTheCycleAvailable() {
+        assertThat(maintenance.recordInspection(returnedId, Set.of(), "")).isEqualTo(CycleState.AVAILABLE);
+        assertThat(maintenance.recordInspection(returnedId, Set.of(), null)).isEqualTo(CycleState.AVAILABLE);
 
         assertThat(flags.findByCycleId(cycleId)).isEmpty();
     }
