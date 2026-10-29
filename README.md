@@ -12,10 +12,11 @@ A Java/Spring Boot web portal that replaces Jamuna Hostel's paper cycle register
 |---|---|---|
 | Proposal | 21 Aug 2026 | Submitted, approved after scope revision |
 | Design doc | 11 Sep 2026 | Submitted |
-| Mid-demo | 9 Oct 2026 | In progress — see [PLAN.md](PLAN.md) |
+| Mid-demo | 12 Oct 2026 | Done. Feedback and what changed: [PROGRESS.md](docs/PROGRESS.md), Week 5. Schema: [SCHEMA.md](docs/SCHEMA.md). Flows: [FLOWS.md](docs/FLOWS.md) |
+| Live on a public URL | 30 Oct 2026 | In progress (ADR 0006, see [PLAN.md](PLAN.md), Week 6) |
 | Final submission | 6 Nov 2026 | — |
 
-Weekly progress is logged in [docs/PROGRESS.md](docs/PROGRESS.md). The repo is pushed every week.
+Weekly progress is logged in [docs/PROGRESS.md](docs/PROGRESS.md). Since the mid-demo, every change goes in through a short pull request reviewed by the other team member (see "Team and work split" in [PLAN.md](PLAN.md)).
 
 ## Repository layout
 
