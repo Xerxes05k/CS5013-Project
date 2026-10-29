@@ -4,7 +4,7 @@ Week-by-week plan from the design doc to the final submission. Work lands throug
 
 Module names refer to [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-**Fixed dates:** mid-demo **Mon 12 Oct 2026** (moved from Fri 9 Oct), final submission **Fri 6 Nov 2026**.
+**Fixed dates:** mid-demo **Mon 12 Oct 2026** (moved from Fri 9 Oct), **live on a public URL (off localhost) Fri 30 Oct 2026**, final submission **Fri 6 Nov 2026**.
 
 ## Team and work split
 
@@ -109,11 +109,19 @@ Every item below from week 4 on has a tag: **[BE]** backend, **[FE]** frontend, 
 
 ## Week 6 — 24–30 Oct
 
-**Goal: deployed and piloted.**
+**Goal: off localhost. Live on a public HTTPS URL by Fri 30 Oct, then piloted there.**
 
-- [ ] **[BE · Yashas]** Deploy to free-tier host (Render/Railway); ADR 0006 on hosting choice (0005 is now the cycle-parts decision)
-- [ ] **[FE · Aditya]** Phone pass before the pilot: every page on a real phone, camera opens straight from the ID-scan page, guard can read the pickup/return confirmation at arm's length
-- [ ] **[both]** Pilot with the Jamuna GS + one guard shift; log issues
+Until now the app has only run on our laptops. Residents use their own phones, so the pilot needs a real address. This comes first this week; everything after it runs on the live URL.
+
+- [ ] **[BE · Yashas] Live by Fri 30 Oct**, as small PRs in this order:
+  - [ ] ADR 0006 (0005 is the cycle-parts decision): choose the host. It must cost the hostel nothing (Warden's condition), keep files across restarts and redeploys (the SQLite database is a file on disk), and serve HTTPS (passcodes are sent at login). Check each free tier against all three before choosing; a hostel or department machine is the fallback.
+  - [ ] `prod` profile: no `data.sql` seeding (it carries the dev login with a published passcode), database path on the persistent disk, `cyclebooking.ocr.tessdata` set for the server
+  - [ ] A build that runs on the host: `./mvnw package` jar, plus a Dockerfile (Java 25 runtime, `tesseract-ocr` with English data) or the host's equivalent
+  - [ ] First deploy, with real residents loaded and their own passcodes generated, never the dev one
+  - [ ] Smoke test on the live URL from a phone: log in → scan ID → book → pickup → return. Then restart the service and check the booking is still there.
+  - [ ] Live URL in README
+- [ ] **[FE · Aditya]** Phone pass before the pilot, **on the live URL**: every page on a real phone, camera opens straight from the ID-scan page, guard can read the pickup/return confirmation at arm's length
+- [ ] **[both]** Pilot on the live URL with the Jamuna GS + one guard shift, once the smoke test passes; log issues
 - [ ] **[BE · Aditya]** Verify usage-hours report against a week of the paper register (verification-plan fixture)
 - [ ] Sunday PROGRESS entry (PR)
 
