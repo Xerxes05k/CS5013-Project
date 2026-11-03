@@ -1,0 +1,101 @@
+package in.ac.iitm.cs5013.cyclebooking.auth;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import in.ac.iitm.cs5013.cyclebooking.persistence.Resident;
+import in.ac.iitm.cs5013.cyclebooking.persistence.ResidentRepository;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+/** Loading residents for the live site: hashed passcodes saved, plain ones written once for the GS. */
+class ResidentImporterTest {
+
+    @TempDir
+    Path dir;
+
+    private final ResidentRepository residents = mock(ResidentRepository.class);
+    private final PasswordEncoder encoder = new BCryptPasswordEncoder();
+    private ResidentImporter importer;
+
+    @BeforeEach
+    void setUp() {
+        when(residents.findByRollNumberIgnoreCase(anyString())).thenReturn(Optional.empty());
+        when(residents.findBySmailAddressIgnoreCase(anyString())).thenReturn(Optional.empty());
+        importer = new ResidentImporter(residents, encoder, dir.resolve("in.csv"), dir.resolve("out.csv"), "Jamuna");
+    }
+
+    private Path csv(String... lines) throws Exception {
+        return Files.write(dir.resolve("residents.csv"), List.of(lines));
+    }
+
+    @Test
+    void newResidentGetsAHashedPasscodeAndThePlainOneIsWrittenForTheGs() throws Exception {
+        Path out = dir.resolve("passcodes.csv");
+
+        int added = importer.importFile(csv("roll_number,name,smail_address", "ce24b001, Aditya Gautam ,CE24B001@smail.iitm.ac.in"), out);
+
+        ArgumentCaptor<Resident> saved = ArgumentCaptor.forClass(Resident.class);
+        verify(residents).save(saved.capture());
+        assertThat(added).isEqualTo(1);
+        assertThat(saved.getValue().getRollNumber()).isEqualTo("CE24B001");
+        assertThat(saved.getValue().getSmailAddress()).isEqualTo("ce24b001@smail.iitm.ac.in");
+        assertThat(saved.getValue().getHostel()).isEqualTo("Jamuna");
+
+        List<String> written = Files.readAllLines(out);
+        assertThat(written).hasSize(2);
+        String passcode = written.get(1).substring(written.get(1).lastIndexOf(',') + 1);
+        assertThat(passcode).hasSize(ResidentImporter.PASSCODE_LENGTH);
+        assertThat(encoder.matches(passcode, saved.getValue().getPasscodeHash())).isTrue();
+    }
+
+    @Test
+    void residentAlreadyLoadedIsSkippedSoTheirPasscodeStays() throws Exception {
+        when(residents.findByRollNumberIgnoreCase("CE24B128")).thenReturn(Optional.of(
+                new Resident("CE24B128", "Yashas Katyal", "Jamuna", "ce24b128@smail.iitm.ac.in", "hash")));
+
+        int added = importer.importFile(csv("CE24B128,Yashas Katyal,ce24b128@smail.iitm.ac.in"), dir.resolve("p.csv"));
+
+        assertThat(added).isZero();
+        verify(residents, never()).save(any());
+    }
+
+    @Test
+    void existingPasscodeFileIsNeverOverwritten() throws Exception {
+        Path out = Files.writeString(dir.resolve("p.csv"), "passcodes already handed out");
+
+        assertThatThrownBy(() -> importer.importFile(csv("CE24B001,Aditya Gautam,ce24b001@smail.iitm.ac.in"), out))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(Files.readString(out)).isEqualTo("passcodes already handed out");
+        verify(residents, never()).save(any());
+    }
+
+    @Test
+    void malformedLineIsReportedWithItsLineNumber() throws Exception {
+        assertThatThrownBy(() -> importer.importFile(csv("roll_number,name,smail_address", "CE24B001,Aditya Gautam"),
+                dir.resolve("p.csv")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Line 2");
+    }
+
+    @Test
+    void passcodesAvoidCharactersThatAreEasyToMisread() {
+        for (int i = 0; i < 200; i++) {
+            assertThat(ResidentImporter.newPasscode()).doesNotContainPattern("[0O1IL]");
+        }
+    }
+}
