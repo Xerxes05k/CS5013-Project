@@ -237,4 +237,34 @@ class DefaultBookingServiceTest {
 
         assertThat(status.knownIssues()).containsExactly(Part.BRAKES, Part.BELL);
     }
+
+    @Test
+    void cancelBooking_beforePickupFreesTheCycleSoItCanBeBookedAgain() {
+        Resident r = resident("CE24B062");
+        Cycle c = cycles.save(new Cycle("CANCEL-01"));
+        bookingService.createBooking(identity(r), c.getId(), ownCard(r));
+
+        String label = bookingService.cancelBooking(r.getId());
+
+        assertThat(label).isEqualTo("CANCEL-01");
+        assertThat(cycles.findById(c.getId()).orElseThrow().getState()).isEqualTo(CycleState.AVAILABLE);
+        assertThat(bookings.findOpenBookingForResident(r.getId())).isEmpty();
+        bookingService.createBooking(identity(r), c.getId(), ownCard(r));
+        assertThat(cycles.findById(c.getId()).orElseThrow().getState()).isEqualTo(CycleState.BOOKED);
+    }
+
+    @Test
+    void cancelBooking_afterPickupIsRefusedAndChangesNothing() {
+        Resident r = resident("CE24B063");
+        Cycle c = cycles.save(new Cycle("CANCEL-02"));
+        bookingService.createBooking(identity(r), c.getId(), ownCard(r));
+        Booking open = bookings.findOpenBookingForResident(r.getId()).orElseThrow();
+        open.setPickedUpAt(Instant.now());
+        bookings.save(open);
+
+        assertThatThrownBy(() -> bookingService.cancelBooking(r.getId()))
+                .isInstanceOf(BookingRejectedException.class)
+                .hasMessageContaining("picked up");
+        assertThat(bookings.findOpenBookingForResident(r.getId())).isPresent();
+    }
 }

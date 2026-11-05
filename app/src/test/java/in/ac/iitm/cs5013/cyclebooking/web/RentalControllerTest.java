@@ -18,6 +18,7 @@ import in.ac.iitm.cs5013.cyclebooking.auth.AuthService;
 import in.ac.iitm.cs5013.cyclebooking.auth.ResidentDetailsService;
 import in.ac.iitm.cs5013.cyclebooking.auth.ResidentIdentity;
 import in.ac.iitm.cs5013.cyclebooking.auth.SecurityConfig;
+import in.ac.iitm.cs5013.cyclebooking.booking.BookingRejectedException;
 import in.ac.iitm.cs5013.cyclebooking.booking.BookingService;
 import in.ac.iitm.cs5013.cyclebooking.booking.CurrentRental;
 import in.ac.iitm.cs5013.cyclebooking.maintenance.MaintenanceService;
@@ -163,5 +164,25 @@ class RentalControllerTest {
                 .andExpect(content().string(Matchers.containsString("name=\"brokenParts\" value=\"BRAKES\"")))
                 .andExpect(content().string(Matchers.containsString("name=\"brokenParts\" value=\"BELL\"")))
                 .andExpect(content().string(Matchers.containsString("<span>Handlebar</span>")));
+    }
+
+    @Test
+    void cancelFreesTheCycleAndSaysSoOnTheList() throws Exception {
+        when(booking.cancelBooking(1L)).thenReturn("JAM-02");
+
+        mockMvc.perform(post("/rental/cancel").with(csrf()))
+                .andExpect(redirectedUrl("/cycles"))
+                .andExpect(flash().attribute("notice", "Booking for JAM-02 cancelled. The cycle is free again."));
+        verify(booking).cancelBooking(1L);
+    }
+
+    @Test
+    void cancelAfterPickupStaysOnMyCycleWithTheReason() throws Exception {
+        when(booking.cancelBooking(1L)).thenThrow(
+                new BookingRejectedException("This cycle has been picked up. Return it at the stand instead."));
+
+        mockMvc.perform(post("/rental/cancel").with(csrf()))
+                .andExpect(redirectedUrl("/rental"))
+                .andExpect(flash().attribute("error", "This cycle has been picked up. Return it at the stand instead."));
     }
 }
