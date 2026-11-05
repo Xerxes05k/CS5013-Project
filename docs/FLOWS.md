@@ -129,6 +129,7 @@ Every `POST` ends in a redirect (post-redirect-get), so refreshing a page never 
 | POST | `/cycles/{id}/book-typed` | `CycleController.bookWithTypedRoll` | `createBookingWithTypedRoll` | `/rental` | same as above |
 | GET | `/rental` | `RentalController.myCycle` | `currentRental` | `rental.html` | `/cycles` if none |
 | POST | `/rental/pickup` (passcode) | `RentalController.pickup` | `confirmPickup` | `/rental` | `/rental` with error |
+| POST | `/rental/cancel` | `RentalController.cancel` | `cancelBooking` (before pickup only) | `/cycles` | `/rental` with error |
 | POST | `/rental/return` (passcode, guardNote, brokenParts…) | `RentalController.giveBack` | `confirmReturn` | `/rental/comment` | `/rental` with error |
 | GET | `/rental/comment` | `RentalController.commentBox` | — | `comment.html` | `/cycles` if no return in session |
 | POST | `/rental/comment` (text) | `RentalController.comment` | `submitComment` | `/cycles` | `/rental/comment` with error |
