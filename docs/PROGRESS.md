@@ -4,6 +4,77 @@ One entry per week, added before the Sunday push. Newest first. Each entry recor
 
 ---
 
+## Week 7 (final) — 6 Nov 2026
+
+*Covers 2–6 Nov. Written on Thu 5 Nov for the Fri 6 Nov submission.*
+
+**Shipped** (PRs #11–#21, all merged 5 Nov)
+- **Cycle parts decide the cycle's state (ADR 0005), end to end.**
+  - Backend (#17, Yashas): `cycle_parts` table, the fit-to-ride rule (`FitToRide`), `recordInspection`, `partsOf`, `recordRepair`, and known issues on the cards.
+  - Returning a cycle with a broken critical part (tyre, brakes, chain, seat, pedal, handlebar) now sends it to *Under repair*. A broken lock or bell only shows as a known issue.
+  - Frontend (Aditya): parts checklist on the return form (#11), known issues on the cards (#12), cycle detail page with the parts grid (#13).
+- **GS role and the Repaired button** (#19, Aditya; prod address in #20, Yashas).
+  - Only the GS (a list of smail addresses in config) sees the Report tab; anyone else gets 403 on `/report`.
+  - **Repaired** on a part flag puts the part back to OK, clears its flags, and frees the cycle if no critical part is still broken. Without this, a cycle sent to repair could never come back.
+- **Cancel a booking before pickup** (#18, Aditya). This closes the "a booking never picked up holds the cycle forever" gap from SCHEMA.md §5, except for automatic expiry.
+- **Ready to go live:**
+  - `prod` profile, resident importer and deploy guide (#16, Aditya);
+  - host decision (#15, ADR 0006), then moved from Oracle to Azure for Students because Oracle needs a credit card (#21, ADR 0007, Yashas).
+- **Docs:** Week 5 log (#14); this entry; `docs/HANDOVER.md` for residents, guards and the GS; SCHEMA.md note on the `cycle_parts` unique index.
+- Tests: **126, all green** on a clean `./mvnw clean test` (83 at the end of week 6).
+
+**Live URL:** not deployed at the time of writing. The Azure for Students sign-up and the first deploy (DEPLOY.md steps 1–6) are the last step. The URL and smoke-test result go in the README status table once done.
+
+**AI-assisted**
+- **Yashas:** Claude Code wrote the cycle-parts backend (#17), the prod GS config (#20), ADR 0007 with the deploy-guide changes, the handover guide and this entry. It also reviewed and ran Aditya's PRs before each merge. Two finds from that review:
+  - **The importer could lose passcodes (#16).** It saved residents line by line but wrote the passcodes file only at the end. A bad line later in the CSV would leave earlier residents saved, with passcodes nobody had. A test reproduced it, and Aditya made the import all-or-nothing.
+  - **SQLite ignored the "one row per part" rule.** Hibernate's SQLite dialect drops multi-column unique constraints without a warning, which a test caught when a duplicate got through. The index is now created at startup (`CyclePartUniqueIndex`).
+- **Aditya:** Claude Code wrote the frontend PRs (#11–#13), the cancel flow (#18), the GS role (#19), the prod profile, importer and deploy guide (#16), and the Week 5 log (#14).
+
+**What was cut, and why**
+- **OpenNLP comment classifier** (ADR 0003): not built. Comments are stored and shown to the GS but raise no flags. The 120-row labelled set is in the repo for whoever picks it up. Cycle parts came first, because the mid-demo feedback asked for a cycle's properties to decide its next state.
+- **GS override for rule limits**, and its page: not built.
+- **Fleet sub-tab** on the GS page: not built (Usage and Maintenance are).
+- **GS marking a part broken:** ADR 0005 allows it but it is not built; only the guard at return marks parts broken.
+- **No-show expiry:** not built; a resident can cancel before pickup instead (#18).
+- **Pilot with the GS and a guard shift, and the usage report checked against the paper register:** not done, because the site wasn't live in time.
+- **SQLite foreign keys** (`PRAGMA foreign_keys = ON`): still off. Recorded as a gap in SCHEMA.md §5.
+- **Real-photo OCR accuracy run** (≥ 10 consented ID photos): still one real card. The synthetic results are in Week 2.
+
+**Blocked**
+- The 30 Oct go-live date was missed: no host until Oracle was ruled out on 5 Nov.
+
+---
+
+## Week 6 — 1 Nov 2026
+
+*Written late, on Thu 5 Nov. Covers 26 Oct–1 Nov.*
+
+**Shipped** (merged 28–29 Oct)
+- **Aditya, frontend** (#3–#7):
+  - tab bar on every page after login (#3);
+  - cycle cards with state chips (#4);
+  - full-width guard confirmation panel after pickup and return (#5);
+  - History tab with `BookingService.history` (#6);
+  - GS maintenance list under the Report tab (#7).
+- **Design docs** merged (#8): ADR 0005 (cycle parts) and `docs/UI.md` (tabs and wireframes).
+- **Yashas, backend:**
+  - the ADR 0005 contract (#9): `Part`, `PartCondition`, `PartStatus` and the new `MaintenanceService` / `TransactionService` signatures, declared so both sides could build in parallel;
+  - the go-live timeline (#10).
+- Tests: 83, all green.
+
+**AI-assisted**
+- **Aditya:** Claude Code wrote the five frontend PRs and their controller tests.
+- **Yashas:** Claude Code wrote the contract PR in small commits and reviewed and merged Aditya's stacked PRs.
+
+**Blocked**
+- **The 30 Oct go-live was missed.** No host was chosen until ADR 0006 on 3 Nov.
+- Aditya opened the frontend for cycle parts on 29 Oct (#11–#13), but it waited for the backend, which wasn't written until 5 Nov.
+
+**Next:** cycle parts backend, GS role, deploy, final docs (all in the final entry).
+
+---
+
 ## Week 5 — 25 Oct 2026
 
 *Written late, on Thu 29 Oct. It covers 12–25 Oct. The work merged from 27 Oct on goes in the Week 6 entry.*
