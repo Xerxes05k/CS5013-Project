@@ -40,7 +40,17 @@
     <form th:unless="${rental.awaitingPickup()}" th:action="@{/rental/return}" method="post">
         <p>Bring the cycle back to the stand. Ask the guard whether anything is wrong with it,
             then type your passcode while the guard watches.</p>
-        <label for="guard-note">Guard's note on the cycle (optional, leave blank if it's fine)</label>
+        <!-- ADR 0005: each ticked part becomes a guard flag; a broken critical part will
+             send the cycle to repair. Nothing ticked means the guard found nothing wrong. -->
+        <fieldset class="parts">
+            <legend>What did the guard find broken? Leave all unticked if nothing.</legend>
+            <label th:each="part : ${parts}" class="part">
+                <input type="checkbox" name="brokenParts" th:value="${part.name()}">
+                <span th:text="${#strings.capitalize(part.label())}">Brakes</span>
+                <small th:if="${part.critical()}">critical</small>
+            </label>
+        </fieldset>
+        <label for="guard-note">Anything else the guard said (optional)</label>
         <textarea id="guard-note" name="guardNote" rows="2" maxlength="500"
                   placeholder="e.g. front brake loose"></textarea>
         <label for="return-passcode">Passcode</label>
