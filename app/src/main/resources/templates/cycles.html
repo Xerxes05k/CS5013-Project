@@ -27,7 +27,7 @@
             th:with="mine=${rental != null and rental.cycleLabel == cycle.label}"
             th:classappend="${mine} ? 'mine'">
             <div class="card-head">
-                <span class="label" th:text="${cycle.label}">JAM-01</span>
+                <a class="label" th:href="@{/cycles/{id}(id=${cycle.id})}" th:text="${cycle.label}">JAM-01</a>
                 <span class="chip" th:classappend="'chip-' + ${cycle.state}" th:switch="${cycle.state.name()}">
                     <span th:case="'AVAILABLE'">Free</span>
                     <span th:case="'BOOKED'">Booked</span>

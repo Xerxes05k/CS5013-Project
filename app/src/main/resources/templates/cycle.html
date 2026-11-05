@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="|${cycle.label} — Jamuna Hostel cycles|">JAM-05 — Jamuna Hostel cycles</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: topbar}"></div>
+<nav th:replace="~{fragments/layout :: tabs('cycles')}"></nav>
+<header>
+    <h1 class="card-head">
+        <span th:text="${cycle.label}">JAM-05</span>
+        <span class="chip" th:classappend="'chip-' + ${cycle.state}" th:switch="${cycle.state.name()}">
+            <span th:case="'AVAILABLE'">Free</span>
+            <span th:case="'BOOKED'">Booked</span>
+            <span th:case="'ISSUED'">In use</span>
+            <span th:case="'UNDER_REPAIR'">Under repair</span>
+        </span>
+    </h1>
+    <p class="summary">A broken <b>critical</b> part sends the cycle to repair until the GS fixes it.</p>
+</header>
+
+<main>
+    <!-- The properties that decide the cycle's state (ADR 0005). -->
+    <ul class="part-grid">
+        <li th:each="p : ${parts}" class="part-tile" th:classappend="'part-' + ${p.condition}">
+            <span class="part-name"><span th:text="${p.name}">Brakes</span><small th:if="${p.critical}"> critical</small></span>
+            <span class="part-condition" th:text="${p.shown}">✕ Broken</span>
+            <span class="part-note" th:if="${p.note}" th:text="${p.note}">squeaks on the left</span>
+        </li>
+    </ul>
+    <p><a th:href="@{/cycles}">&larr; All cycles</a></p>
+</main>
+</body>
+</html>

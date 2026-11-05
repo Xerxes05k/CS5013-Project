@@ -123,6 +123,7 @@ Every `POST` ends in a redirect (post-redirect-get), so refreshing a page never 
 | POST | `/login` | Spring Security | `ResidentDetailsService.loadUserByUsername`, BCrypt check | `/cycles` | `/login?error` |
 | GET | `/` | `CycleController.home` | — | `/cycles` | |
 | GET | `/cycles` | `CycleController.availability` | `getAvailability`, `currentResident`, `currentRental` | `cycles.html` | |
+| GET | `/cycles/{id}` | `CycleDetailController.detail` | `getAvailability`, `MaintenanceService.partsOf` | `cycle.html` | `/cycles` if no such cycle |
 | GET | `/cycles/{id}/verify` | `CycleController.verifyPage` | `getAvailability` | `verify.html` | `/cycles` if not bookable |
 | POST | `/cycles/{id}/book` (photo) | `CycleController.book` | `scanCard`, `createBooking` | `/rental` | `/cycles/{id}/verify` (ID failed) or `/cycles` (rule/lock) |
 | POST | `/cycles/{id}/book-typed` | `CycleController.bookWithTypedRoll` | `createBookingWithTypedRoll` | `/rental` | same as above |
