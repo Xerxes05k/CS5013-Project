@@ -30,6 +30,7 @@ h1 { font-size: 1.25rem; margin: 0 0 .25rem; }
 .card-head, .card-foot { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
 .card-foot { margin-top: .5rem; min-height: 44px; }
 .card-note { color: #57606a; font-size: .9rem; }
+.issues { margin: .4rem 0 0; padding: .3rem .6rem; border-radius: 6px; background: #fff8e5; color: var(--busy); font-size: .9rem; }
 
 .label { font-weight: 600; font-size: 1.1rem; }
 

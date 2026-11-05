@@ -1,5 +1,6 @@
 package in.ac.iitm.cs5013.cyclebooking.web;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -26,6 +27,7 @@ import in.ac.iitm.cs5013.cyclebooking.idverify.ExtractedIdentity;
 import in.ac.iitm.cs5013.cyclebooking.idverify.IdVerificationService;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
 import in.ac.iitm.cs5013.cyclebooking.persistence.IdCheck;
+import in.ac.iitm.cs5013.cyclebooking.persistence.Part;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -136,5 +138,17 @@ class CycleControllerTest {
                 .andExpect(content().string(Matchers.containsString("card mine")))
                 .andExpect(content().string(Matchers.containsString("Your cycle")))
                 .andExpect(content().string(Matchers.not(Matchers.containsString("/cycles/9/verify"))));
+    }
+
+    @Test
+    void cardListsKnownIssuesOnlyWhenThereAreAny() throws Exception {
+        when(booking.getAvailability()).thenReturn(List.of(
+                new CycleStatus(7L, "JAM-07", CycleState.AVAILABLE, List.of(Part.LOCK, Part.BELL)),
+                new CycleStatus(8L, "JAM-08", CycleState.AVAILABLE, List.of())));
+
+        String page = mockMvc.perform(get("/cycles")).andReturn().getResponse().getContentAsString();
+
+        assertThat(page).contains("Known issues: lock, bell");
+        assertThat(page.split("Known issues:", -1)).hasSize(2);
     }
 }
