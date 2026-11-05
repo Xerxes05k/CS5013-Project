@@ -39,10 +39,11 @@ public interface MaintenanceService {
      * guard's note. A note with no part ticked becomes one {@link #GUARD_NOTE_LABEL}
      * flag; no parts and a blank note record nothing.
      *
-     * Returns the state the cycle should take after the return. Until each cycle's part
-     * conditions are stored, that is always AVAILABLE; the fit-to-ride rule replaces it
-     * in the cycle-parts PR. Called by the Pickup/Return Module inside the return, so the
-     * flags and the return are saved together or not at all.
+     * Each broken part is also marked BROKEN on the cycle. Returns the state the cycle
+     * should take after the return, from the fit-to-ride rule over all its recorded
+     * parts: UNDER_REPAIR if any critical part is broken, otherwise AVAILABLE. Called by
+     * the Pickup/Return Module inside the return, so the flags, the parts and the return
+     * are saved together or not at all.
      *
      * @param brokenParts never null; empty when the guard found nothing broken
      */
@@ -50,15 +51,17 @@ public interface MaintenanceService {
 
     /**
      * The 8 parts of a cycle with their current condition, in {@link Part} order: the
-     * cycle detail page's parts grid and the GS's Fleet view.
+     * cycle detail page's parts grid and the GS's Fleet view. A part that has never
+     * changed is OK, with no time or note.
      */
     List<PartStatus> partsOf(long cycleId);
 
     /**
-     * The GS records that a part has been repaired: it goes back to OK, a GS flag is
-     * written, and the cycle takes the state the fit-to-ride rule gives, which is
-     * returned. Not applied while the cycle is BOOKED or ISSUED, so a repair never takes
-     * a cycle from someone mid-rental (ADR 0005).
+     * The GS records that a part has been repaired: it goes back to OK, its open flags
+     * are resolved so it leaves the maintenance list, a resolved GS flag keeps the repair
+     * as history, and the cycle takes the state the fit-to-ride rule gives. Returns the
+     * cycle's state. A BOOKED or ISSUED cycle keeps its state, so a repair never takes a
+     * cycle from someone mid-rental (ADR 0005).
      */
     CycleState recordRepair(long cycleId, Part part, String note);
 }

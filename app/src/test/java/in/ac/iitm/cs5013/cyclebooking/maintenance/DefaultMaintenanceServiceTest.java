@@ -9,6 +9,8 @@ import in.ac.iitm.cs5013.cyclebooking.persistence.BookingRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Comment;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CommentRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Cycle;
+import in.ac.iitm.cs5013.cyclebooking.persistence.CyclePart;
+import in.ac.iitm.cs5013.cyclebooking.persistence.CyclePartRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
 import in.ac.iitm.cs5013.cyclebooking.persistence.FlagSource;
@@ -16,10 +18,12 @@ import in.ac.iitm.cs5013.cyclebooking.persistence.IdCheck;
 import in.ac.iitm.cs5013.cyclebooking.persistence.MaintenanceFlag;
 import in.ac.iitm.cs5013.cyclebooking.persistence.MaintenanceFlagRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Part;
+import in.ac.iitm.cs5013.cyclebooking.persistence.PartCondition;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Resident;
 import in.ac.iitm.cs5013.cyclebooking.persistence.ResidentRepository;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,6 +56,9 @@ class DefaultMaintenanceServiceTest {
     @Autowired
     private MaintenanceFlagRepository flags;
 
+    @Autowired
+    private CyclePartRepository parts;
+
     private long returnedId;
     private long openId;
     private long cycleId;
@@ -76,6 +83,7 @@ class DefaultMaintenanceServiceTest {
 
     @AfterEach
     void cleanUp() {
+        parts.deleteAll();
         flags.deleteAll();
         comments.deleteAll();
         bookings.deleteAll();
@@ -149,5 +157,125 @@ class DefaultMaintenanceServiceTest {
         assertThat(maintenance.recordInspection(returnedId, Set.of(), null)).isEqualTo(CycleState.AVAILABLE);
 
         assertThat(flags.findByCycleId(cycleId)).isEmpty();
+    }
+
+    @Test
+    void partsOf_listsAllEightPartsWithUnrecordedOnesOk() {
+        Cycle cycle = cycles.findById(cycleId).orElseThrow();
+        parts.save(new CyclePart(cycle, Part.BRAKES, PartCondition.BROKEN, FlagSource.GUARD,
+                Instant.parse("2026-11-05T05:00:00Z"), "front brake loose"));
+
+        List<PartStatus> statuses = maintenance.partsOf(cycleId);
+
+        assertThat(statuses).extracting(PartStatus::part).containsExactly(Part.values());
+        assertThat(statuses.get(Part.BRAKES.ordinal())).satisfies(brakes -> {
+            assertThat(brakes.condition()).isEqualTo(PartCondition.BROKEN);
+            assertThat(brakes.note()).isEqualTo("front brake loose");
+            assertThat(brakes.critical()).isTrue();
+        });
+        assertThat(statuses.get(Part.BELL.ordinal())).satisfies(bell -> {
+            assertThat(bell.condition()).isEqualTo(PartCondition.OK);
+            assertThat(bell.updatedAt()).isNull();
+        });
+    }
+
+    @Test
+    void recordInspection_brokenCriticalPart_isMarkedBrokenAndSendsTheCycleToRepair() {
+        CycleState next = maintenance.recordInspection(returnedId, Set.of(Part.BRAKES), "front brake loose");
+
+        assertThat(next).isEqualTo(CycleState.UNDER_REPAIR);
+        assertThat(parts.findByCycleIdAndPart(cycleId, Part.BRAKES)).hasValueSatisfying(brakes -> {
+            assertThat(brakes.getCondition()).isEqualTo(PartCondition.BROKEN);
+            assertThat(brakes.getChangedBy()).isEqualTo(FlagSource.GUARD);
+            assertThat(brakes.getNote()).isEqualTo("front brake loose");
+        });
+    }
+
+    @Test
+    void recordInspection_brokenBellOnly_isMarkedBrokenButTheCycleStaysAvailable() {
+        assertThat(maintenance.recordInspection(returnedId, Set.of(Part.BELL), "")).isEqualTo(CycleState.AVAILABLE);
+        assertThat(parts.findByCycleIdAndPart(cycleId, Part.BELL)).get()
+                .extracting(CyclePart::getCondition).isEqualTo(PartCondition.BROKEN);
+    }
+
+    @Test
+    void recordInspection_partAlreadyRecordedIsUpdatedNotDuplicated() {
+        Cycle cycle = cycles.findById(cycleId).orElseThrow();
+        parts.save(new CyclePart(cycle, Part.TYRE, PartCondition.REPORTED, FlagSource.COMMENT,
+                Instant.parse("2026-11-04T05:00:00Z"), null));
+
+        maintenance.recordInspection(returnedId, Set.of(Part.TYRE), "rear tyre flat");
+
+        assertThat(parts.findByCycleId(cycleId)).singleElement().satisfies(tyre -> {
+            assertThat(tyre.getCondition()).isEqualTo(PartCondition.BROKEN);
+            assertThat(tyre.getChangedBy()).isEqualTo(FlagSource.GUARD);
+        });
+    }
+
+    @Test
+    void recordInspection_criticalPartBrokenEarlierStillCountsWhenNothingNewIsFound() {
+        Cycle cycle = cycles.findById(cycleId).orElseThrow();
+        parts.save(new CyclePart(cycle, Part.CHAIN, PartCondition.BROKEN, FlagSource.GS,
+                Instant.parse("2026-11-04T05:00:00Z"), null));
+
+        assertThat(maintenance.recordInspection(returnedId, Set.of(), "")).isEqualTo(CycleState.UNDER_REPAIR);
+    }
+
+    private Cycle cycleIn(CycleState state, Part... broken) {
+        Cycle cycle = cycles.findById(cycleId).orElseThrow();
+        cycle.setState(state);
+        cycle = cycles.save(cycle);
+        for (Part part : broken) {
+            parts.save(new CyclePart(cycle, part, PartCondition.BROKEN, FlagSource.GUARD,
+                    Instant.parse("2026-11-04T05:00:00Z"), null));
+        }
+        return cycle;
+    }
+
+    @Test
+    void recordRepair_lastBrokenCriticalPartFixed_cycleIsAvailableAgain() {
+        cycleIn(CycleState.UNDER_REPAIR, Part.BRAKES);
+
+        assertThat(maintenance.recordRepair(cycleId, Part.BRAKES, "new brake pads")).isEqualTo(CycleState.AVAILABLE);
+
+        assertThat(cycles.findById(cycleId).orElseThrow().getState()).isEqualTo(CycleState.AVAILABLE);
+        assertThat(parts.findByCycleIdAndPart(cycleId, Part.BRAKES)).hasValueSatisfying(brakes -> {
+            assertThat(brakes.getCondition()).isEqualTo(PartCondition.OK);
+            assertThat(brakes.getChangedBy()).isEqualTo(FlagSource.GS);
+        });
+    }
+
+    @Test
+    void recordRepair_anotherCriticalPartStillBroken_cycleStaysUnderRepair() {
+        cycleIn(CycleState.UNDER_REPAIR, Part.BRAKES, Part.TYRE);
+
+        assertThat(maintenance.recordRepair(cycleId, Part.BRAKES, null)).isEqualTo(CycleState.UNDER_REPAIR);
+    }
+
+    @Test
+    void recordRepair_resolvesOpenFlagsForThatPartOnlyAndKeepsTheRepairAsHistory() {
+        Cycle cycle = cycleIn(CycleState.UNDER_REPAIR, Part.BRAKES);
+        Instant t = Instant.parse("2026-11-04T05:00:00Z");
+        flags.save(new MaintenanceFlag(cycle, null, "brakes", FlagSource.GUARD, t, "front brake loose"));
+        flags.save(new MaintenanceFlag(cycle, null, "bell", FlagSource.GUARD, t, "bell missing"));
+
+        maintenance.recordRepair(cycleId, Part.BRAKES, "new brake pads");
+
+        assertThat(flags.findByResolvedAtIsNullOrderByCreatedAtDesc())
+                .extracting(MaintenanceFlag::getLabel).containsExactly("bell");
+        assertThat(flags.findByCycleId(cycleId)).filteredOn(f -> f.getSource() == FlagSource.GS)
+                .singleElement().satisfies(repair -> {
+                    assertThat(repair.getNote()).isEqualTo("new brake pads");
+                    assertThat(repair.getResolvedAt()).isNotNull();
+                });
+    }
+
+    @Test
+    void recordRepair_onACycleOutWithAResident_leavesItsStateAlone() {
+        cycleIn(CycleState.ISSUED, Part.BELL);
+
+        assertThat(maintenance.recordRepair(cycleId, Part.BELL, null)).isEqualTo(CycleState.ISSUED);
+        assertThat(parts.findByCycleIdAndPart(cycleId, Part.BELL)).get()
+                .extracting(CyclePart::getCondition).isEqualTo(PartCondition.OK);
     }
 }

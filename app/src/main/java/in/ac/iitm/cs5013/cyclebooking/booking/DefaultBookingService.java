@@ -3,11 +3,15 @@ package in.ac.iitm.cs5013.cyclebooking.booking;
 import in.ac.iitm.cs5013.cyclebooking.auth.ResidentIdentity;
 import in.ac.iitm.cs5013.cyclebooking.idverify.ExtractedIdentity;
 import in.ac.iitm.cs5013.cyclebooking.idverify.IdVerificationService;
+import in.ac.iitm.cs5013.cyclebooking.maintenance.MaintenanceService;
+import in.ac.iitm.cs5013.cyclebooking.maintenance.PartStatus;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Booking;
 import in.ac.iitm.cs5013.cyclebooking.persistence.BookingRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Cycle;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.IdCheck;
+import in.ac.iitm.cs5013.cyclebooking.persistence.Part;
+import in.ac.iitm.cs5013.cyclebooking.persistence.PartCondition;
 import in.ac.iitm.cs5013.cyclebooking.persistence.ResidentRepository;
 import in.ac.iitm.cs5013.cyclebooking.rules.EligibilityResult;
 import in.ac.iitm.cs5013.cyclebooking.rules.RuleService;
@@ -27,15 +31,17 @@ class DefaultBookingService implements BookingService {
     private final BookingRepository bookings;
     private final RuleService rules;
     private final IdVerificationService idVerification;
+    private final MaintenanceService maintenance;
     private final Clock clock;
 
     DefaultBookingService(CycleRepository cycles, ResidentRepository residents, BookingRepository bookings,
-            RuleService rules, IdVerificationService idVerification, Clock clock) {
+            RuleService rules, IdVerificationService idVerification, MaintenanceService maintenance, Clock clock) {
         this.cycles = cycles;
         this.residents = residents;
         this.bookings = bookings;
         this.rules = rules;
         this.idVerification = idVerification;
+        this.maintenance = maintenance;
         this.clock = clock;
     }
 
@@ -43,8 +49,15 @@ class DefaultBookingService implements BookingService {
     @Transactional(readOnly = true)
     public List<CycleStatus> getAvailability() {
         return cycles.findAllByOrderByLabelAsc().stream()
-                // knownIssues is filled from each cycle's parts once cycle_parts exists.
-                .map(c -> new CycleStatus(c.getId(), c.getLabel(), c.getState(), List.of()))
+                .map(c -> new CycleStatus(c.getId(), c.getLabel(), c.getState(), knownIssues(c.getId())))
+                .toList();
+    }
+
+    /** Parts that are not OK, through the Maintenance Module's interface (one query per cycle). */
+    private List<Part> knownIssues(long cycleId) {
+        return maintenance.partsOf(cycleId).stream()
+                .filter(p -> p.condition() != PartCondition.OK)
+                .map(PartStatus::part)
                 .toList();
     }
 
