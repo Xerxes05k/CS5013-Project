@@ -178,4 +178,46 @@ class DefaultMaintenanceServiceTest {
             assertThat(bell.updatedAt()).isNull();
         });
     }
+
+    @Test
+    void recordInspection_brokenCriticalPart_isMarkedBrokenAndSendsTheCycleToRepair() {
+        CycleState next = maintenance.recordInspection(returnedId, Set.of(Part.BRAKES), "front brake loose");
+
+        assertThat(next).isEqualTo(CycleState.UNDER_REPAIR);
+        assertThat(parts.findByCycleIdAndPart(cycleId, Part.BRAKES)).hasValueSatisfying(brakes -> {
+            assertThat(brakes.getCondition()).isEqualTo(PartCondition.BROKEN);
+            assertThat(brakes.getChangedBy()).isEqualTo(FlagSource.GUARD);
+            assertThat(brakes.getNote()).isEqualTo("front brake loose");
+        });
+    }
+
+    @Test
+    void recordInspection_brokenBellOnly_isMarkedBrokenButTheCycleStaysAvailable() {
+        assertThat(maintenance.recordInspection(returnedId, Set.of(Part.BELL), "")).isEqualTo(CycleState.AVAILABLE);
+        assertThat(parts.findByCycleIdAndPart(cycleId, Part.BELL)).get()
+                .extracting(CyclePart::getCondition).isEqualTo(PartCondition.BROKEN);
+    }
+
+    @Test
+    void recordInspection_partAlreadyRecordedIsUpdatedNotDuplicated() {
+        Cycle cycle = cycles.findById(cycleId).orElseThrow();
+        parts.save(new CyclePart(cycle, Part.TYRE, PartCondition.REPORTED, FlagSource.COMMENT,
+                Instant.parse("2026-11-04T05:00:00Z"), null));
+
+        maintenance.recordInspection(returnedId, Set.of(Part.TYRE), "rear tyre flat");
+
+        assertThat(parts.findByCycleId(cycleId)).singleElement().satisfies(tyre -> {
+            assertThat(tyre.getCondition()).isEqualTo(PartCondition.BROKEN);
+            assertThat(tyre.getChangedBy()).isEqualTo(FlagSource.GUARD);
+        });
+    }
+
+    @Test
+    void recordInspection_criticalPartBrokenEarlierStillCountsWhenNothingNewIsFound() {
+        Cycle cycle = cycles.findById(cycleId).orElseThrow();
+        parts.save(new CyclePart(cycle, Part.CHAIN, PartCondition.BROKEN, FlagSource.GS,
+                Instant.parse("2026-11-04T05:00:00Z"), null));
+
+        assertThat(maintenance.recordInspection(returnedId, Set.of(), "")).isEqualTo(CycleState.UNDER_REPAIR);
+    }
 }

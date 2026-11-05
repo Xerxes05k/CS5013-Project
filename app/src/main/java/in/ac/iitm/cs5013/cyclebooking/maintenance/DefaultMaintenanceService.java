@@ -4,6 +4,7 @@ import in.ac.iitm.cs5013.cyclebooking.persistence.Booking;
 import in.ac.iitm.cs5013.cyclebooking.persistence.BookingRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Comment;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CommentRepository;
+import in.ac.iitm.cs5013.cyclebooking.persistence.Cycle;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CyclePart;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CyclePartRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
@@ -76,21 +77,22 @@ class DefaultMaintenanceService implements MaintenanceService {
         if (trimmed.length() > MAX_GUARD_NOTE_LENGTH) {
             throw new IllegalArgumentException("Guard note longer than " + MAX_GUARD_NOTE_LENGTH + " characters");
         }
-        if (brokenParts.isEmpty() && trimmed.isEmpty()) {
-            return CycleState.AVAILABLE;
-        }
         Booking booking = bookings.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("No booking " + bookingId));
+        Cycle cycle = booking.getCycle();
         Instant now = clock.instant();
         String words = trimmed.isEmpty() ? null : trimmed;
 
-        if (brokenParts.isEmpty()) {
-            flags.save(new MaintenanceFlag(booking.getCycle(), null, GUARD_NOTE_LABEL, FlagSource.GUARD, now, words));
+        if (brokenParts.isEmpty() && words != null) {
+            flags.save(new MaintenanceFlag(cycle, null, GUARD_NOTE_LABEL, FlagSource.GUARD, now, words));
         }
         // Declaration order, so the flags are saved in the same order every time.
-        brokenParts.stream().sorted().forEach(part -> flags.save(
-                new MaintenanceFlag(booking.getCycle(), null, part.label(), FlagSource.GUARD, now, words)));
-        return CycleState.AVAILABLE;
+        brokenParts.stream().sorted().forEach(part -> {
+            flags.save(new MaintenanceFlag(cycle, null, part.label(), FlagSource.GUARD, now, words));
+            mark(cycle, part, PartCondition.BROKEN, FlagSource.GUARD, now, words);
+        });
+        // Over every recorded part, not just today's: a part broken earlier still counts.
+        return FitToRide.nextState(parts.findByCycleId(cycle.getId()));
     }
 
     @Override
@@ -113,5 +115,12 @@ class DefaultMaintenanceService implements MaintenanceService {
     @Override
     public CycleState recordRepair(long cycleId, Part part, String note) {
         throw new UnsupportedOperationException("recordRepair arrives with the cycle_parts table");
+    }
+
+    /** Sets a part's current condition, adding its row the first time it changes. */
+    private void mark(Cycle cycle, Part part, PartCondition condition, FlagSource by, Instant at, String note) {
+        parts.findByCycleIdAndPart(cycle.getId(), part).ifPresentOrElse(
+                p -> p.change(condition, by, at, note),
+                () -> parts.save(new CyclePart(cycle, part, condition, by, at, note)));
     }
 }

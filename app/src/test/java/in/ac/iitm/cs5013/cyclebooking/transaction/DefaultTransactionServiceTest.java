@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Booking;
 import in.ac.iitm.cs5013.cyclebooking.persistence.BookingRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Cycle;
+import in.ac.iitm.cs5013.cyclebooking.persistence.CyclePartRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
 import in.ac.iitm.cs5013.cyclebooking.persistence.FlagSource;
@@ -48,6 +49,9 @@ class DefaultTransactionServiceTest {
     private MaintenanceFlagRepository flags;
 
     @Autowired
+    private CyclePartRepository parts;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private long bookingId;
@@ -67,6 +71,7 @@ class DefaultTransactionServiceTest {
 
     @AfterEach
     void cleanUp() {
+        parts.deleteAll();
         flags.deleteAll();
         bookings.deleteAll();
         cycles.deleteAll();

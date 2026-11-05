@@ -39,10 +39,11 @@ public interface MaintenanceService {
      * guard's note. A note with no part ticked becomes one {@link #GUARD_NOTE_LABEL}
      * flag; no parts and a blank note record nothing.
      *
-     * Returns the state the cycle should take after the return. Until each cycle's part
-     * conditions are stored, that is always AVAILABLE; the fit-to-ride rule replaces it
-     * in the cycle-parts PR. Called by the Pickup/Return Module inside the return, so the
-     * flags and the return are saved together or not at all.
+     * Each broken part is also marked BROKEN on the cycle. Returns the state the cycle
+     * should take after the return, from the fit-to-ride rule over all its recorded
+     * parts: UNDER_REPAIR if any critical part is broken, otherwise AVAILABLE. Called by
+     * the Pickup/Return Module inside the return, so the flags, the parts and the return
+     * are saved together or not at all.
      *
      * @param brokenParts never null; empty when the guard found nothing broken
      */
