@@ -6,9 +6,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -59,22 +62,34 @@ class ResidentImporter implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws IOException {
         int added = importFile(residentsCsv, passcodesOut);
-        log.info("Imported {} new residents from {}; their passcodes are in {}", added, residentsCsv, passcodesOut);
+        if (added == 0) {
+            log.info("No new residents in {}; nothing saved and no passcodes file written", residentsCsv);
+        } else {
+            log.info("Imported {} new residents from {}; their passcodes are in {}", added, residentsCsv, passcodesOut);
+        }
     }
 
     /**
      * Adds every resident in {@code csv} not already present (same roll number or smail
      * address) and writes {@code roll_number,name,smail_address,passcode} for each one
-     * added to {@code out}. Refuses to overwrite an existing {@code out}, so passcodes
-     * already handed out are never lost. Returns how many were added.
+     * added to {@code out}. Returns how many were added.
+     *
+     * All or nothing, so a passcode can never be lost: every line is checked before
+     * anything is saved, the passcodes file is written before the residents, and the
+     * residents are saved in one transaction. A bad line anywhere, or a failed save,
+     * leaves the database and {@code out} as they were. An existing {@code out} is never
+     * overwritten, because it may hold passcodes not yet handed out.
      */
     int importFile(Path csv, Path out) throws IOException {
         if (Files.exists(out)) {
             throw new IllegalStateException(out + " already exists. Move it away first; it holds passcodes.");
         }
+        List<Resident> toAdd = new ArrayList<>();
         List<String> handOut = new ArrayList<>();
         handOut.add("roll_number,name,smail_address,passcode");
+        Set<String> seenInFile = new HashSet<>();
 
+        // 1. Check every line before saving anything.
         List<String> lines = Files.readAllLines(csv);
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i).strip();
@@ -84,22 +99,50 @@ class ResidentImporter implements ApplicationRunner {
             String[] f = line.split(",", -1);
             if (f.length != 3 || f[0].isBlank() || f[1].isBlank() || f[2].isBlank()) {
                 throw new IllegalArgumentException("Line " + (i + 1) + " of " + csv
-                        + ": expected roll_number,name,smail_address but got \"" + line + "\"");
+                        + ": expected roll_number,name,smail_address (no commas inside a name) but got \"" + line + "\"");
             }
             String roll = f[0].strip().toUpperCase();
             String name = f[1].strip();
             String smail = f[2].strip().toLowerCase();
+            if (!seenInFile.add(roll) || !seenInFile.add(smail)) {
+                throw new IllegalArgumentException("Line " + (i + 1) + " of " + csv + ": " + roll
+                        + " or " + smail + " appears earlier in the file");
+            }
             if (residents.findByRollNumberIgnoreCase(roll).isPresent()
                     || residents.findBySmailAddressIgnoreCase(smail).isPresent()) {
                 continue; // already loaded: keep their existing passcode
             }
             String passcode = newPasscode();
-            residents.save(new Resident(roll, name, hostel, smail, passwordEncoder.encode(passcode)));
+            toAdd.add(new Resident(roll, name, hostel, smail, passwordEncoder.encode(passcode)));
             handOut.add(roll + "," + name + "," + smail + "," + passcode);
         }
+        if (toAdd.isEmpty()) {
+            return 0;
+        }
 
-        Files.write(out, handOut, StandardOpenOption.CREATE_NEW);
-        return handOut.size() - 1;
+        // 2. Passcodes first, readable by this user only, then 3. every resident in one transaction.
+        writeOwnerOnly(out, handOut);
+        try {
+            residents.saveAll(toAdd); // Spring Data runs saveAll in one transaction
+        } catch (RuntimeException e) {
+            Files.deleteIfExists(out); // nobody was saved, so these passcodes mean nothing
+            throw e;
+        }
+        return toAdd.size();
+    }
+
+    /**
+     * Creates {@code out} with owner-only permissions (rw-------) on Linux, so other users
+     * on the server can't read the plain passcodes. Windows has no POSIX permissions; the
+     * file is created plainly there (local testing only, the server runs Linux).
+     */
+    private static void writeOwnerOnly(Path out, List<String> lines) throws IOException {
+        if (out.getFileSystem().supportedFileAttributeViews().contains("posix")) {
+            Files.createFile(out, PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")));
+        } else {
+            Files.createFile(out);
+        }
+        Files.write(out, lines, StandardOpenOption.TRUNCATE_EXISTING);
     }
 
     static String newPasscode() {
