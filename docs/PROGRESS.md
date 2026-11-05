@@ -4,6 +4,43 @@ One entry per week, added before the Sunday push. Newest first. Each entry recor
 
 ---
 
+## Week 5 — 25 Oct 2026
+
+*Written late, on Thu 29 Oct. It covers 12–25 Oct. The work merged from 27 Oct on goes in the Week 6 entry.*
+
+**Mid-demo feedback (Mon 12 Oct)**
+- We showed our process (prompts, git, testing) but not the system, so it looked as if we did not know it. Faculty asked for:
+  - the schema of the objects and their properties;
+  - the developer-side architecture and how a request flows through it;
+  - a cycle's properties that decide its next state;
+  - a less plain frontend: everything was one page, so add tabs;
+  - a proper work split, and short commits that build up a feature instead of one large weekly push.
+
+**Shipped**
+- **`docs/SCHEMA.md`** (PR #2): ER diagram, every table and column, enums, the records passed between modules, and where each rule is enforced. The column types come from the tables Hibernate actually created, dumped from the SQLite file, not from memory. It records three gaps: SQLite has no foreign keys, "one open rental per resident" holds only because there is one DB connection, and a booking that is never picked up holds its cycle forever.
+- **`docs/FLOWS.md`** (PR #2): layered architecture, who calls whom, every HTTP endpoint, and flowcharts for login, booking (rules → ID → lock), the OCR pipeline, the two-resident race, pickup, return and the usage report. Planned steps are drawn dashed so the diagrams don't claim more than the code does.
+- **Work split and workflow** (PR #2): Yashas leads backend, Aditya frontend plus some backend tasks; every remaining PLAN item has an owner. From now on: one branch per feature, short commits that each pass the tests, and a PR reviewed and merged by the other person. `scripts/weekly-update.sh` now refuses to run on `main` and pushes a branch.
+- **Design for the other two points** (written 12 Oct, merged later in PR #8): ADR 0005 gives each cycle 8 parts with a condition, and a broken critical part means `UNDER_REPAIR`. `docs/UI.md` adds tab navigation and page wireframes.
+- **Wed 15 Oct: follow-up session with the TA.** We walked through the schema and the flows using a 13-slide deck built from SCHEMA.md and FLOWS.md.
+- No code changed, so the test count is the same as week 4.
+
+**AI-assisted**
+- Claude Code wrote SCHEMA.md, FLOWS.md, ADR 0005, UI.md and the TA deck, after dumping the real schema and reading the code. Choices we should be able to defend in the viva:
+  - One `cycle_parts` row per part rather than 8 columns on `cycles`, so the classifier, the guard checklist and the GS screen loop over one list.
+  - The classifier may only mark a part `REPORTED`; only the guard or the GS can mark it `BROKEN` (ADR 0003: a human decides).
+  - The missing foreign keys are written down as a gap rather than silently fixed; turning them on is a PLAN item.
+
+**Blocked**
+- **No code was merged from 14 to 25 Oct**, so none of the week-5 items started on time: classifier, cycle parts, GS role.
+- The design docs stayed uncommitted on one laptop until 27 Oct, which held up the backend contract that depends on them.
+
+**Next (week 6)**
+- Frontend: tab bar, cycle cards, guard confirmation panel, History tab, maintenance list.
+- Backend: the ADR 0005 contract first, then cycle parts and the classifier.
+- Off localhost: live on a public URL by Fri 30 Oct, then the pilot.
+
+---
+
 ## Week 4 — 11 Oct 2026
 
 **Shipped**

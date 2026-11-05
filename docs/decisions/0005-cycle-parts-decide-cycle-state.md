@@ -1,6 +1,6 @@
 # ADR 0005: A cycle's parts decide whether it can be booked
 
-**Date:** 2026-10-12 · **Status:** Proposed (to confirm with the team before week 5 code)
+**Date:** 2026-10-12 · **Status:** Accepted (5 Nov 2026; open questions answered below, built in #17)
 
 ## Context
 
@@ -32,7 +32,8 @@ The classifier training data (`labelled-comments.tsv`) already names the 8 parts
 - Adding a ninth part means changing the `Part` enum and the classifier labels together.
 - Rejected alternative: 8 condition columns on `cycles` (`brakes_condition`, …). Simpler to read, but the classifier, the guard checklist and the GS screen would each need a branch per column; one row per part lets all three loop over the same list.
 
-## To confirm
+## Confirmed (5 Nov 2026)
 
-- Is the critical / non-critical split right? (Is a broken lock really OK to ride with?)
-- Should two or more `REPORTED` comments on the same critical part prompt the GS, or is the GS list enough?
+- **Critical / non-critical split: kept as written.** Brakes, tyre, chain, seat, pedal and handlebar make a cycle `UNDER_REPAIR`; a broken lock or bell only warns the next resident, who can still ride safely.
+- **The GS may mark a part `BROKEN`** (decision 4 stands), **but this is not built in the submission.** Only `recordRepair` (back to `OK`) exists, so for now only the guard at return marks a part `BROKEN`. Listed as future work in PROGRESS.md.
+- **Repeated `REPORTED` comments prompting the GS:** not built. The GS maintenance list is the only prompt for now.
