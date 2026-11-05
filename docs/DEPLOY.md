@@ -1,32 +1,44 @@
 # Deploying the live site
 
-Step by step, for the setup chosen in [ADR 0006](decisions/0006-host-on-oracle-always-free-vm.md): an Oracle Cloud Always Free VM, the jar run by `systemd`, and Caddy in front for HTTPS. Commands after step 1 run on the VM over `ssh` unless marked **laptop**.
+Step by step, for the setup chosen in [ADR 0007](decisions/0007-host-on-azure-for-students-vm.md) (host) and [ADR 0006](decisions/0006-host-on-oracle-always-free-vm.md) (everything else): an Azure for Students VM, the jar run by `systemd`, and Caddy in front for HTTPS. Commands after step 1 run on the VM over `ssh` unless marked **laptop**.
 
-Placeholders: `VM_IP` is the VM's public IP, and `jamuna-cycles` stands for the DuckDNS name you pick.
+Placeholders: `jamuna-cycles.centralindia.cloudapp.azure.com` stands for the VM's DNS name (step 1). `azureuser` is the admin username you pick when creating the VM.
 
 ---
 
 ## 1. Create the VM (once, in a browser)
 
-1. Sign up at cloud.oracle.com. A card is asked for verification only; stay on Always Free resources.
-2. **Create instance:**
-   - Image: **Ubuntu 24.04**
-   - Shape: **Ampere A1** (Always Free eligible), 1 OCPU, 6 GB memory
-   - Add your SSH public key
-3. **Open ports 80 and 443:** in the instance's subnet → Security List, add ingress rules for TCP 80 and 443 from `0.0.0.0/0`.
-4. **Get a name:**
-   - Sign in at duckdns.org (free) and create `jamuna-cycles`.
-   - Set it to `VM_IP`.
+1. **Sign up at azure.microsoft.com/free/students** with your smail address. Microsoft checks you are a student through that address. No credit card is asked for. You get $100 of credit for 12 months.
+2. **laptop:** make an SSH key if you don't have one (`ls ~/.ssh/id_ed25519.pub`):
+
+   ```bash
+   ssh-keygen -t ed25519
+   ```
+
+3. **Portal → Virtual machines → Create:**
+   - Region: **Central India**
+   - Image: **Ubuntu Server 24.04 LTS - x64 Gen2**
+   - Size: **Standard_B1s** (it says "Free services eligible")
+   - Authentication: **SSH public key**, username `azureuser`, and paste the contents of `~/.ssh/id_ed25519.pub`
+   - Public inbound ports: **SSH (22), HTTP (80), HTTPS (443)**
+   - Disks: keep the default OS disk
+   - Management: check that **auto-shutdown is off**
+
+4. **Give it a name:** VM → Overview → click the public IP → Configuration.
+   - Set **DNS name label** to `jamuna-cycles`. The VM is then reachable at `jamuna-cycles.centralindia.cloudapp.azure.com`.
+   - Check that the IP assignment is **Static**, so the name keeps pointing at the VM.
+
+If Azure won't accept the student sign-up, see the fallback in ADR 0007: a laptop and a Cloudflare quick tunnel, for the demo only.
 
 ## 2. Install Java 25, Tesseract, Caddy (once)
 
 ```bash
-ssh ubuntu@VM_IP
+ssh azureuser@jamuna-cycles.centralindia.cloudapp.azure.com
 
-# Ubuntu images on Oracle also block ports in iptables; open 80 and 443 there too.
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 80 -j ACCEPT
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 443 -j ACCEPT
-sudo netfilter-persistent save
+# B1s has 1 GiB of RAM; a 2 GB swap file keeps Java and Tesseract from running out.
+sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
+sudo mkswap /swapfile && sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
 # Java 25 from Adoptium (Ubuntu's own repos may not have 25 yet).
 sudo apt update && sudo apt install -y wget gpg
@@ -51,7 +63,7 @@ sudo mkdir -p /opt/cyclebooking && sudo chown cyclebooking: /opt/cyclebooking
 
 ```bash
 cd app && ./mvnw test && ./mvnw package -DskipTests
-scp target/cyclebooking-0.0.1-SNAPSHOT.jar ../deploy/cyclebooking.service ../deploy/Caddyfile ubuntu@VM_IP:/tmp/
+scp target/cyclebooking-0.0.1-SNAPSHOT.jar ../deploy/cyclebooking.service ../deploy/Caddyfile azureuser@jamuna-cycles.centralindia.cloudapp.azure.com:/tmp/
 ```
 
 On the VM:
@@ -70,12 +82,12 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now cyclebooking
 journalctl -u cyclebooking -f      # wait for "Started CyclebookingApplication", then Ctrl+C
 
-# Put your DuckDNS name in the Caddyfile, then:
+# Put the VM's DNS name in the Caddyfile, then:
 sudo cp /tmp/Caddyfile /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 ```
 
-Open `https://jamuna-cycles.duckdns.org` on a phone. You should see the login page with a padlock.
+Open `https://jamuna-cycles.centralindia.cloudapp.azure.com` on a phone. You should see the login page with a padlock.
 
 The first start creates the empty tables in `/var/lib/cyclebooking/cyclebooking.db`. There is **no** dev login on the server: `data.sql` is switched off in the `prod` profile.
 
@@ -92,7 +104,7 @@ sudo -u cyclebooking sqlite3 /var/lib/cyclebooking/cyclebooking.db \
 
 ```bash
 # laptop
-scp residents.csv ubuntu@VM_IP:/tmp/
+scp residents.csv azureuser@jamuna-cycles.centralindia.cloudapp.azure.com:/tmp/
 
 # VM: stop the service so only one program writes the database, then run the importer.
 sudo systemctl stop cyclebooking
@@ -118,7 +130,7 @@ How the importer behaves:
   then from your laptop:
 
   ```bash
-  scp ubuntu@VM_IP:/tmp/p.csv .
+  scp azureuser@jamuna-cycles.centralindia.cloudapp.azure.com:/tmp/p.csv .
   ```
 
 - Then delete both copies on the VM:
@@ -135,7 +147,7 @@ From a phone on mobile data, not hostel Wi-Fi, so it really comes over the inter
 
 1. Log in with a real resident's smail address and passcode.
 2. Book a cycle and scan your ID card.
-   - **If the scan never reads,** check `journalctl -u cyclebooking | grep "ID card scan failed"`. A native library problem on ARM shows there.
+   - **If the scan never reads,** check `journalctl -u cyclebooking | grep "ID card scan failed"`. A missing Tesseract library shows there.
    - The typed-roll fallback after 3 tries still works, so booking isn't blocked.
 3. Confirm pickup, then return with one part ticked.
 4. Restart the service, then check the booking is still in History:
