@@ -37,6 +37,11 @@
         <button type="submit">Confirm pickup</button>
     </form>
 
+    <!-- Changed your mind before pickup: frees the cycle for someone else. -->
+    <form th:if="${rental.awaitingPickup()}" th:action="@{/rental/cancel}" method="post" class="skip">
+        <button type="submit">Cancel this booking</button>
+    </form>
+
     <form th:unless="${rental.awaitingPickup()}" th:action="@{/rental/return}" method="post">
         <p>Bring the cycle back to the stand. Ask the guard whether anything is wrong with it,
             then type your passcode while the guard watches.</p>

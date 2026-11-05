@@ -9,6 +9,7 @@ import in.ac.iitm.cs5013.cyclebooking.persistence.Booking;
 import in.ac.iitm.cs5013.cyclebooking.persistence.BookingRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Cycle;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleRepository;
+import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
 import in.ac.iitm.cs5013.cyclebooking.persistence.IdCheck;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Part;
 import in.ac.iitm.cs5013.cyclebooking.persistence.PartCondition;
@@ -107,6 +108,26 @@ class DefaultBookingService implements BookingService {
         Duration held = b.getPickedUpAt() == null ? Duration.ZERO : Duration.between(b.getPickedUpAt(), end);
         return new HistoryEntry(b.getCycle().getLabel(), b.getCreatedAt(), b.getPickedUpAt(), b.getReturnedAt(),
                 held.toMinutes() / 60.0, held.compareTo(Booking.MAX_HOLD) > 0);
+    }
+
+    @Override
+    @Transactional
+    public String cancelBooking(long residentId) {
+        Booking booking = bookings.findOpenBookingForResident(residentId)
+                .orElseThrow(() -> new BookingRejectedException("You have no booking to cancel."));
+        if (booking.getPickedUpAt() != null) {
+            throw new BookingRejectedException("This cycle has been picked up. Return it at the stand instead.");
+        }
+        Cycle cycle = booking.getCycle();
+        // Deleted rather than kept: the cycle was never used, so a cancelled booking
+        // neither shows in History nor counts towards the 3-a-week limit.
+        bookings.delete(booking);
+        // A pickup at the same moment also changes this cycle; @Version on Cycle makes
+        // one of the two transactions fail instead of both going through.
+        if (cycle.getState() == CycleState.BOOKED) {
+            cycle.setState(CycleState.AVAILABLE);
+        }
+        return cycle.getLabel();
     }
 
     private void checkRules(ResidentIdentity resident) {

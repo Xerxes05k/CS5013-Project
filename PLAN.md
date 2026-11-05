@@ -139,7 +139,8 @@ Until now the app has only run on our laptops. Residents use their own phones, s
 
 Gaps found while writing [docs/SCHEMA.md](docs/SCHEMA.md#5-integrity-rules-and-where-each-is-enforced). Pick a week for each or drop it, and say so here.
 
-- [ ] **[BE]** Booking cancel and no-show expiry: a booking never picked up holds the cycle forever. **[FE]** cancel button on "My cycle".
+- [x] **[BE]** Booking cancel, **[FE]** cancel button on "My cycle" (Aditya, before pickup only; the cycle is freed and the booking deleted)
+- [ ] **[BE]** No-show expiry: a booking never picked up still holds the cycle until the resident cancels it (not built)
 - [ ] **[BE]** Turn on SQLite foreign keys (`PRAGMA foreign_keys = ON`) or record in an ADR why not
 
 ---
