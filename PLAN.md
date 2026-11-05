@@ -102,9 +102,9 @@ Every item below from week 4 on has a tag: **[BE]** backend, **[FE]** frontend, 
 - [ ] **[BE · Yashas] CommentClassifier:** Apache OpenNLP model trained on the labeled set; precision/recall recorded in PROGRESS
 - [ ] **[BE · Yashas]** `MaintenanceService.submitComment` → flags (ADR 0003)
 - [ ] **[FE · Aditya]** after a comment, show the raw comment next to the flags it raised
-- [x] **[BE · Aditya] Reporting Module (v2):** `getMaintenanceList` combining guard notes + auto-flags (PR #7). Resolving a flag became `recordRepair` (built in #17); the GS's Repaired button for it is in the GS tab item below, still open.
-- [ ] **[FE · Aditya]** GS tab with Usage · Maintenance · Fleet sub-tabs; maintenance list shows raw comment / guard words and a "Repaired" button (UI.md §2) (Usage and Maintenance done in PR #7; Fleet and the Repaired button left)
-- [ ] **[BE · Yashas]** GS role in `SecurityConfig`: only the GS sees `/report` and the maintenance list
+- [x] **[BE · Aditya] Reporting Module (v2):** `getMaintenanceList` combining guard notes + auto-flags (PR #7). Resolving a flag became `recordRepair` (built in #17), with the GS's Repaired button in #19.
+- [ ] **[FE · Aditya]** GS tab with Usage · Maintenance · Fleet sub-tabs; maintenance list shows raw comment / guard words and a "Repaired" button (UI.md §2) (Usage and Maintenance in PR #7, the Repaired button in #19; the Fleet sub-tab is left)
+- [x] **[BE · Yashas]** GS role in `SecurityConfig`: only the GS sees `/report` and the maintenance list (built by Aditya in #19; the live server's GS address is set in the service file)
 - [x] Sunday PROGRESS entry (PR) (written late, on 29 Oct)
 
 ## Week 6 — 24–30 Oct
