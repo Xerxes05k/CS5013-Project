@@ -30,3 +30,12 @@ WHERE c.label = 'JAM-05' AND NOT EXISTS (SELECT 1 FROM cycle_parts p WHERE p.cyc
 INSERT INTO cycle_parts (cycle_id, part, "condition", changed_by, updated_at, note)
 SELECT c.id, 'BELL', 'BROKEN', 'GUARD', 1793507400000, 'bell missing' FROM cycles c
 WHERE c.label = 'JAM-04' AND NOT EXISTS (SELECT 1 FROM cycle_parts p WHERE p.cycle_id = c.id AND p.part = 'BELL');
+
+-- The guard's flag for each seeded broken part, as recordInspection would have written at
+-- return, so the GS's maintenance list shows them and JAM-05 can be repaired in a demo.
+-- Only while the part is still broken and has no open flag, so a repair stays repaired
+-- after a restart.
+INSERT INTO maintenance_flags (cycle_id, comment_id, label, source, note, created_at, resolved_at)
+SELECT p.cycle_id, NULL, lower(p.part), 'GUARD', p.note, p.updated_at, NULL FROM cycle_parts p
+WHERE p."condition" = 'BROKEN' AND NOT EXISTS (SELECT 1 FROM maintenance_flags f
+    WHERE f.cycle_id = p.cycle_id AND f.label = lower(p.part) AND f.resolved_at IS NULL);
