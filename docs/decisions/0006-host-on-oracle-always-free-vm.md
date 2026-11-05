@@ -1,6 +1,6 @@
 # ADR 0006: Host on an Oracle Cloud Always Free VM, jar under systemd, Caddy for HTTPS
 
-**Date:** 2026-11-03 · **Status:** Proposed (the first deploy confirms it)
+**Date:** 2026-11-03 · **Status:** Superseded in part by [ADR 0007](0007-host-on-azure-for-students-vm.md) (5 Nov 2026): Oracle needs a credit card, which neither of us has, so the VM is on Azure for Students. Decisions 2-7 below still apply.
 
 ## Context
 
