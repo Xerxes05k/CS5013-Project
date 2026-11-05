@@ -18,7 +18,8 @@ public interface TransactionService {
     CycleState confirmPickup(long bookingId, String passcode);
 
     /**
-     * ISSUED -> AVAILABLE. Returns the cycle's new state. The guard looks the cycle
+     * ISSUED -> AVAILABLE, or -> UNDER_REPAIR if the guard found a critical part broken
+     * (ADR 0005). Returns the cycle's new state. The guard looks the cycle
      * over; the resident ticks the parts the guard found broken and types anything else
      * the guard says into {@code guardConditionNote}. Nothing ticked and a blank note
      * mean nothing wrong. Both go to the Maintenance Module (ADR 0005).

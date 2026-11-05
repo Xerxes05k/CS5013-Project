@@ -90,12 +90,12 @@ Post-return free-text comment box. Comments go through a small OpenNLP classifie
 ```java
 List<MaintenanceFlag> submitComment(long bookingId, String text);
 CycleState            recordInspection(long bookingId, Set<Part> brokenParts, String note);  // from confirmReturn
-List<PartStatus>      partsOf(long cycleId);                          // ADR 0005, with cycle_parts
-CycleState            recordRepair(long cycleId, Part part, String note);  // GS, ADR 0005, with cycle_parts
+List<PartStatus>      partsOf(long cycleId);                          // all 8 parts; no row = OK (ADR 0005)
+CycleState            recordRepair(long cycleId, Part part, String note);  // GS: part back to OK (ADR 0005)
 List<String>          classify(String text);          // CommentClassifier (week 5)
 ```
 
-v1 (week 4) stores the comment, one per returned booking, and turns the guard's findings into `GUARD` flags on the cycle: one per broken part, labelled with the part (`brakes`, `bell`, …), or one `guard_note` flag for a note that names no part, with the guard's words in `MaintenanceFlag.note`. `partsOf` and `recordRepair` are declared for the cycle-parts work (ADR 0005) and throw until the `cycle_parts` table exists; until then `recordInspection` returns `AVAILABLE`. `submitComment` raises no flags until the week-5 classifier. The resident gets the comment box right after a confirmed return. Its booking id comes from the session, never from the form. Training data for the classifier is in `app/src/main/resources/maintenance/labelled-comments.tsv`.
+v1 (week 4) stores the comment, one per returned booking, and turns the guard's findings into `GUARD` flags on the cycle: one per broken part, labelled with the part (`brakes`, `bell`, …), or one `guard_note` flag for a note that names no part, with the guard's words in `MaintenanceFlag.note`. Each broken part is also marked `BROKEN` in `cycle_parts`, and `recordInspection` returns the fit-to-ride state over all the cycle's recorded parts (`UNDER_REPAIR` if any critical part is broken, otherwise `AVAILABLE`), which `confirmReturn` sets. `partsOf` lists all 8 parts, `OK` where no row exists. `recordRepair` sets a part back to `OK`, resolves that part's open flags and re-applies the rule, but only to a cycle at the stand, never to one that is `BOOKED` or `ISSUED`. `submitComment` raises no flags until the week-5 classifier. The resident gets the comment box right after a confirmed return. Its booking id comes from the session, never from the form. Training data for the classifier is in `app/src/main/resources/maintenance/labelled-comments.tsv`.
 
 ### 7. Reporting Module — `reporting`
 GS/Warden-facing weekly view.
@@ -112,13 +112,15 @@ Spring Data JPA over SQLite. Repositories: `ResidentRepository`, `CycleRepositor
 
 ```
 AVAILABLE ──createBooking──▶ BOOKED ──confirmPickup──▶ ISSUED ──confirmReturn──▶ AVAILABLE
-                                                                    │
-                                                  (flag from comment/guard note)
-                                                                    ▼
-                                                              UNDER_REPAIR ──GS clears──▶ AVAILABLE
+    ▲                                                     │      no critical part broken
+    │                                                     │
+    │                                     confirmReturn, guard ticks a broken
+    │                                     critical part (ADR 0005)
+    │                                                     ▼
+    └── recordRepair (GS), no critical part broken ── UNDER_REPAIR
 ```
 
-A booking that isn't picked up within its window returns the cycle to `AVAILABLE`; a cycle held past 24 h is flagged `OVERDUE` on the booking (cycle stays `ISSUED`).
+Only a **confirmed** broken critical part (brakes, tyre, chain, seat, pedal, handlebar) sends a cycle to `UNDER_REPAIR`; a broken lock or bell is shown as a known issue and the cycle stays bookable. The rule (`FitToRide`) runs at return and at a GS repair, never while a cycle is `BOOKED` or `ISSUED`. A booking that is never picked up keeps the cycle `BOOKED`: no-show expiry is not built (PLAN.md, "Not scheduled yet"). A cycle held past 24 h is flagged overdue on the booking; it stays `ISSUED`.
 
 ## Data model (entities)
 

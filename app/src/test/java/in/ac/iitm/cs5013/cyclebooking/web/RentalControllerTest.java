@@ -156,4 +156,12 @@ class RentalControllerTest {
         mockMvc.perform(get("/rental"))
                 .andExpect(content().string(Matchers.not(Matchers.containsString("class=\"confirmed\""))));
     }
+
+    @Test
+    void returnFormListsEveryPartForTheGuardToTick() throws Exception {
+        mockMvc.perform(get("/rental"))
+                .andExpect(content().string(Matchers.containsString("name=\"brokenParts\" value=\"BRAKES\"")))
+                .andExpect(content().string(Matchers.containsString("name=\"brokenParts\" value=\"BELL\"")))
+                .andExpect(content().string(Matchers.containsString("<span>Handlebar</span>")));
+    }
 }

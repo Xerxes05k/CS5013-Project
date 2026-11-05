@@ -78,6 +78,8 @@ public class RentalController {
         if (!r.awaitingPickup()) {
             model.addAttribute("pickedUpAt", show(r.pickedUpAt()));
             model.addAttribute("dueBy", show(r.pickedUpAt().plus(Booking.MAX_HOLD)));
+            // The return form's checklist: one box per part, ticked if the guard found it broken.
+            model.addAttribute("parts", Part.values());
         }
         return "rental";
     }

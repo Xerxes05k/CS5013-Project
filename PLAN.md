@@ -94,10 +94,10 @@ Every item below from week 4 on has a tag: **[BE]** backend, **[FE]** frontend, 
 **Goal: the classifier.**
 
 - [x] **[BE · Yashas] Contract PR first (ADR 0005):** `Part`, `PartCondition`, `PartStatus` record, new `MaintenanceService` / `TransactionService` signatures (SCHEMA.md §8)
-- [ ] **[BE · Yashas]** `CyclePart` entity + repository; 8 `OK` rows per cycle in `data.sql` (JAM-05: brakes `BROKEN`)
-- [ ] **[BE · Yashas]** `recordInspection` with the fit-to-ride rule; tests: broken brakes → `UNDER_REPAIR`, broken bell → `AVAILABLE`
-- [ ] **[BE · Yashas]** `confirmReturn` sets the state `recordInspection` returns; `recordRepair` for the GS
-- [ ] **[BE · Aditya]** `CycleStatus.knownIssues` and `partsOf` for the cards and cycle detail
+- [x] **[BE · Yashas]** `CyclePart` entity + repository; 8 `OK` rows per cycle in `data.sql` (JAM-05: brakes `BROKEN`) (built with "no row = OK" instead of 8 rows, so one-line cycle inserts still work; SCHEMA.md §8)
+- [x] **[BE · Yashas]** `recordInspection` with the fit-to-ride rule; tests: broken brakes → `UNDER_REPAIR`, broken bell → `AVAILABLE`
+- [x] **[BE · Yashas]** `confirmReturn` sets the state `recordInspection` returns; `recordRepair` for the GS
+- [x] **[BE · Aditya]** `CycleStatus.knownIssues` and `partsOf` for the cards and cycle detail (done by Yashas in the cycle-parts PR, alongside the table)
 - [ ] **[FE · Aditya]** Known issues on cycle cards; cycle detail page with the parts grid; parts checklist on the return form
 - [ ] **[BE · Yashas] CommentClassifier:** Apache OpenNLP model trained on the labeled set; precision/recall recorded in PROGRESS
 - [ ] **[BE · Yashas]** `MaintenanceService.submitComment` → flags (ADR 0003)
