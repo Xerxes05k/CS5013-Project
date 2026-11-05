@@ -57,10 +57,11 @@ public interface MaintenanceService {
     List<PartStatus> partsOf(long cycleId);
 
     /**
-     * The GS records that a part has been repaired: it goes back to OK, a GS flag is
-     * written, and the cycle takes the state the fit-to-ride rule gives, which is
-     * returned. Not applied while the cycle is BOOKED or ISSUED, so a repair never takes
-     * a cycle from someone mid-rental (ADR 0005).
+     * The GS records that a part has been repaired: it goes back to OK, its open flags
+     * are resolved so it leaves the maintenance list, a resolved GS flag keeps the repair
+     * as history, and the cycle takes the state the fit-to-ride rule gives. Returns the
+     * cycle's state. A BOOKED or ISSUED cycle keeps its state, so a repair never takes a
+     * cycle from someone mid-rental (ADR 0005).
      */
     CycleState recordRepair(long cycleId, Part part, String note);
 }

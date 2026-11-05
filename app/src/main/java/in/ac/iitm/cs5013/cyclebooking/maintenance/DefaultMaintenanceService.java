@@ -7,6 +7,7 @@ import in.ac.iitm.cs5013.cyclebooking.persistence.CommentRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Cycle;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CyclePart;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CyclePartRepository;
+import in.ac.iitm.cs5013.cyclebooking.persistence.CycleRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
 import in.ac.iitm.cs5013.cyclebooking.persistence.FlagSource;
 import in.ac.iitm.cs5013.cyclebooking.persistence.MaintenanceFlag;
@@ -35,14 +36,16 @@ class DefaultMaintenanceService implements MaintenanceService {
     private final CommentRepository comments;
     private final MaintenanceFlagRepository flags;
     private final CyclePartRepository parts;
+    private final CycleRepository cycles;
     private final Clock clock;
 
     DefaultMaintenanceService(BookingRepository bookings, CommentRepository comments,
-            MaintenanceFlagRepository flags, CyclePartRepository parts, Clock clock) {
+            MaintenanceFlagRepository flags, CyclePartRepository parts, CycleRepository cycles, Clock clock) {
         this.bookings = bookings;
         this.comments = comments;
         this.flags = flags;
         this.parts = parts;
+        this.cycles = cycles;
         this.clock = clock;
     }
 
@@ -110,11 +113,31 @@ class DefaultMaintenanceService implements MaintenanceService {
                 .toList();
     }
 
-    // recordRepair writes a cycle's part conditions; the next commit implements it.
-
     @Override
+    @Transactional
     public CycleState recordRepair(long cycleId, Part part, String note) {
-        throw new UnsupportedOperationException("recordRepair arrives with the cycle_parts table");
+        String trimmed = note == null ? "" : note.strip();
+        if (trimmed.length() > MAX_GUARD_NOTE_LENGTH) {
+            throw new IllegalArgumentException("Note longer than " + MAX_GUARD_NOTE_LENGTH + " characters");
+        }
+        Cycle cycle = cycles.findById(cycleId)
+                .orElseThrow(() -> new IllegalArgumentException("No cycle " + cycleId));
+        Instant now = clock.instant();
+        String words = trimmed.isEmpty() ? null : trimmed;
+
+        mark(cycle, part, PartCondition.OK, FlagSource.GS, now, words);
+        // The issue is fixed, so it leaves the GS's open list...
+        flags.findByCycleIdAndLabelAndResolvedAtIsNull(cycleId, part.label()).forEach(f -> f.setResolvedAt(now));
+        // ...and the repair itself is kept as history, already resolved.
+        MaintenanceFlag repair = new MaintenanceFlag(cycle, null, part.label(), FlagSource.GS, now, words);
+        repair.setResolvedAt(now);
+        flags.save(repair);
+
+        // Only a cycle back at the stand moves; a repair never takes one from a rental.
+        if (cycle.getState() == CycleState.AVAILABLE || cycle.getState() == CycleState.UNDER_REPAIR) {
+            cycle.setState(FitToRide.nextState(parts.findByCycleId(cycleId)));
+        }
+        return cycle.getState();
     }
 
     /** Sets a part's current condition, adding its row the first time it changes. */

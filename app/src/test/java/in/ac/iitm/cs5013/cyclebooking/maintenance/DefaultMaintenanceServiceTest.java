@@ -220,4 +220,62 @@ class DefaultMaintenanceServiceTest {
 
         assertThat(maintenance.recordInspection(returnedId, Set.of(), "")).isEqualTo(CycleState.UNDER_REPAIR);
     }
+
+    private Cycle cycleIn(CycleState state, Part... broken) {
+        Cycle cycle = cycles.findById(cycleId).orElseThrow();
+        cycle.setState(state);
+        cycle = cycles.save(cycle);
+        for (Part part : broken) {
+            parts.save(new CyclePart(cycle, part, PartCondition.BROKEN, FlagSource.GUARD,
+                    Instant.parse("2026-11-04T05:00:00Z"), null));
+        }
+        return cycle;
+    }
+
+    @Test
+    void recordRepair_lastBrokenCriticalPartFixed_cycleIsAvailableAgain() {
+        cycleIn(CycleState.UNDER_REPAIR, Part.BRAKES);
+
+        assertThat(maintenance.recordRepair(cycleId, Part.BRAKES, "new brake pads")).isEqualTo(CycleState.AVAILABLE);
+
+        assertThat(cycles.findById(cycleId).orElseThrow().getState()).isEqualTo(CycleState.AVAILABLE);
+        assertThat(parts.findByCycleIdAndPart(cycleId, Part.BRAKES)).hasValueSatisfying(brakes -> {
+            assertThat(brakes.getCondition()).isEqualTo(PartCondition.OK);
+            assertThat(brakes.getChangedBy()).isEqualTo(FlagSource.GS);
+        });
+    }
+
+    @Test
+    void recordRepair_anotherCriticalPartStillBroken_cycleStaysUnderRepair() {
+        cycleIn(CycleState.UNDER_REPAIR, Part.BRAKES, Part.TYRE);
+
+        assertThat(maintenance.recordRepair(cycleId, Part.BRAKES, null)).isEqualTo(CycleState.UNDER_REPAIR);
+    }
+
+    @Test
+    void recordRepair_resolvesOpenFlagsForThatPartOnlyAndKeepsTheRepairAsHistory() {
+        Cycle cycle = cycleIn(CycleState.UNDER_REPAIR, Part.BRAKES);
+        Instant t = Instant.parse("2026-11-04T05:00:00Z");
+        flags.save(new MaintenanceFlag(cycle, null, "brakes", FlagSource.GUARD, t, "front brake loose"));
+        flags.save(new MaintenanceFlag(cycle, null, "bell", FlagSource.GUARD, t, "bell missing"));
+
+        maintenance.recordRepair(cycleId, Part.BRAKES, "new brake pads");
+
+        assertThat(flags.findByResolvedAtIsNullOrderByCreatedAtDesc())
+                .extracting(MaintenanceFlag::getLabel).containsExactly("bell");
+        assertThat(flags.findByCycleId(cycleId)).filteredOn(f -> f.getSource() == FlagSource.GS)
+                .singleElement().satisfies(repair -> {
+                    assertThat(repair.getNote()).isEqualTo("new brake pads");
+                    assertThat(repair.getResolvedAt()).isNotNull();
+                });
+    }
+
+    @Test
+    void recordRepair_onACycleOutWithAResident_leavesItsStateAlone() {
+        cycleIn(CycleState.ISSUED, Part.BELL);
+
+        assertThat(maintenance.recordRepair(cycleId, Part.BELL, null)).isEqualTo(CycleState.ISSUED);
+        assertThat(parts.findByCycleIdAndPart(cycleId, Part.BELL)).get()
+                .extracting(CyclePart::getCondition).isEqualTo(PartCondition.OK);
+    }
 }
