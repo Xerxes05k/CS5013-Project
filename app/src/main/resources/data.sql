@@ -20,3 +20,13 @@ INSERT INTO cycles (label, state, version)
 SELECT 'JAM-04', 'AVAILABLE', 0 WHERE NOT EXISTS (SELECT 1 FROM cycles WHERE label = 'JAM-04');
 INSERT INTO cycles (label, state, version)
 SELECT 'JAM-05', 'UNDER_REPAIR', 0 WHERE NOT EXISTS (SELECT 1 FROM cycles WHERE label = 'JAM-05');
+
+-- Part conditions (ADR 0005). A part with no row is OK. JAM-05's broken brakes are why
+-- it is under repair; JAM-04's broken bell shows a known issue on a cycle that can still
+-- be booked. updated_at is epoch milliseconds, the way Hibernate stores an Instant here.
+INSERT INTO cycle_parts (cycle_id, part, "condition", changed_by, updated_at, note)
+SELECT c.id, 'BRAKES', 'BROKEN', 'GUARD', 1793507400000, 'front brake cable snapped' FROM cycles c
+WHERE c.label = 'JAM-05' AND NOT EXISTS (SELECT 1 FROM cycle_parts p WHERE p.cycle_id = c.id AND p.part = 'BRAKES');
+INSERT INTO cycle_parts (cycle_id, part, "condition", changed_by, updated_at, note)
+SELECT c.id, 'BELL', 'BROKEN', 'GUARD', 1793507400000, 'bell missing' FROM cycles c
+WHERE c.label = 'JAM-04' AND NOT EXISTS (SELECT 1 FROM cycle_parts p WHERE p.cycle_id = c.id AND p.part = 'BELL');
