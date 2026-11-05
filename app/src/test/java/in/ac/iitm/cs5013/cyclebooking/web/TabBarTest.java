@@ -87,4 +87,17 @@ class TabBarTest {
         mockMvc.perform(get("/login"))
                 .andExpect(content().string(Matchers.not(Matchers.containsString("class=\"tabs\""))));
     }
+
+    @Test
+    void reportTabIsHiddenFromAResidentWhoIsNotTheGs() throws Exception {
+        mockMvc.perform(get("/cycles"))
+                .andExpect(content().string(Matchers.not(Matchers.containsString("href=\"/report\""))));
+    }
+
+    @Test
+    @WithMockUser(username = "ce24b128@smail.iitm.ac.in", roles = {"RESIDENT", "GS"})
+    void gsSeesTheReportTab() throws Exception {
+        mockMvc.perform(get("/cycles"))
+                .andExpect(content().string(Matchers.containsString("href=\"/report\"")));
+    }
 }
