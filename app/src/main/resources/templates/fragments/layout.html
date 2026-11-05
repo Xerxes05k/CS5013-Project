@@ -13,7 +13,7 @@
 </div>
 
 <!-- active: which tab to highlight, "cycles", "rental", "history" or "report".
-     hasOpenRental comes from NavigationAdvice on every page. -->
+     hasOpenRental and isGs come from NavigationAdvice on every page; Report is GS-only. -->
 <nav th:fragment="tabs(active)" class="tabs" aria-label="Sections">
     <a class="tab" th:classappend="${active == 'cycles'} ? 'active'" th:href="@{/cycles}"
        th:aria-current="${active == 'cycles'} ? 'page'">Cycles</a>
@@ -22,7 +22,7 @@
             class="sr-only" th:if="${hasOpenRental}"> (you have a cycle)</span></a>
     <a class="tab" th:classappend="${active == 'history'} ? 'active'" th:href="@{/history}"
        th:aria-current="${active == 'history'} ? 'page'">History</a>
-    <a class="tab" th:classappend="${active == 'report'} ? 'active'" th:href="@{/report}"
+    <a class="tab" th:if="${isGs}" th:classappend="${active == 'report'} ? 'active'" th:href="@{/report}"
        th:aria-current="${active == 'report'} ? 'page'">Report</a>
 </nav>
 

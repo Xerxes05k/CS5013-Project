@@ -21,6 +21,8 @@ public class SecurityConfig {
         return http
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/login", "/css/**", "/error").permitAll()
+                        // Usage, the maintenance list and recording repairs are for the GS only.
+                        .requestMatchers("/report", "/report/**").hasRole("GS")
                         .anyRequest().authenticated())
                 .formLogin(login -> login
                         .loginPage("/login")
