@@ -8,9 +8,14 @@ import in.ac.iitm.cs5013.cyclebooking.idverify.ExtractedIdentity;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Booking;
 import in.ac.iitm.cs5013.cyclebooking.persistence.BookingRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Cycle;
+import in.ac.iitm.cs5013.cyclebooking.persistence.CyclePart;
+import in.ac.iitm.cs5013.cyclebooking.persistence.CyclePartRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
+import in.ac.iitm.cs5013.cyclebooking.persistence.FlagSource;
 import in.ac.iitm.cs5013.cyclebooking.persistence.IdCheck;
+import in.ac.iitm.cs5013.cyclebooking.persistence.Part;
+import in.ac.iitm.cs5013.cyclebooking.persistence.PartCondition;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Resident;
 import in.ac.iitm.cs5013.cyclebooking.persistence.ResidentRepository;
 import java.time.Duration;
@@ -47,8 +52,12 @@ class DefaultBookingServiceTest {
     @Autowired
     private BookingRepository bookings;
 
+    @Autowired
+    private CyclePartRepository parts;
+
     @AfterEach
     void cleanUp() {
+        parts.deleteAll();
         bookings.deleteAll();
         cycles.deleteAll();
         residents.deleteAll();
@@ -213,5 +222,19 @@ class DefaultBookingServiceTest {
         b.setPickedUpAt(pickedUp);
         b.setReturnedAt(pickedUp.plus(held));
         bookings.save(b);
+    }
+
+    @Test
+    void getAvailability_listsPartsThatAreNotOkAsKnownIssues() {
+        Cycle cycle = cycles.save(new Cycle("KNI-01"));
+        Instant t = Instant.parse("2026-11-05T05:00:00Z");
+        parts.save(new CyclePart(cycle, Part.BELL, PartCondition.BROKEN, FlagSource.GUARD, t, null));
+        parts.save(new CyclePart(cycle, Part.BRAKES, PartCondition.REPORTED, FlagSource.COMMENT, t, null));
+        parts.save(new CyclePart(cycle, Part.TYRE, PartCondition.OK, FlagSource.GS, t, null));
+
+        CycleStatus status = bookingService.getAvailability().stream()
+                .filter(c -> c.label().equals("KNI-01")).findFirst().orElseThrow();
+
+        assertThat(status.knownIssues()).containsExactly(Part.BRAKES, Part.BELL);
     }
 }
