@@ -176,6 +176,25 @@ class DefaultTransactionServiceTest {
     }
 
     @Test
+    void confirmReturn_withBrokenBrakesSendsTheCycleToRepair() {
+        transactions.confirmPickup(bookingId, PASSCODE);
+
+        CycleState state = transactions.confirmReturn(bookingId, PASSCODE, Set.of(Part.BRAKES), "front brake gone");
+
+        assertThat(state).isEqualTo(CycleState.UNDER_REPAIR);
+        assertThat(cycleState()).isEqualTo(CycleState.UNDER_REPAIR);
+        assertThat(booking().getReturnedAt()).isNotNull();
+    }
+
+    @Test
+    void confirmReturn_withOnlyTheBellBrokenMakesTheCycleAvailableAgain() {
+        transactions.confirmPickup(bookingId, PASSCODE);
+
+        assertThat(transactions.confirmReturn(bookingId, PASSCODE, Set.of(Part.BELL), "")).isEqualTo(CycleState.AVAILABLE);
+        assertThat(cycleState()).isEqualTo(CycleState.AVAILABLE);
+    }
+
+    @Test
     void confirmReturn_withBlankGuardNoteRaisesNoFlag() {
         transactions.confirmPickup(bookingId, PASSCODE);
 
