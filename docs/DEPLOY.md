@@ -62,6 +62,8 @@ sudo install -o cyclebooking -m 644 /tmp/cyclebooking-0.0.1-SNAPSHOT.jar /opt/cy
 
 ## 4. Start the service and HTTPS (first deploy)
 
+First set the GS: in `cyclebooking.service`, replace `gs-smail@smail.iitm.ac.in` on the `Environment=CYCLEBOOKING_GS=` line with the GS's smail address (add the Warden's after a comma). Only those residents see the Report tab and the Repaired button. They must also be in the residents CSV (§5) to log in.
+
 ```bash
 sudo cp /tmp/cyclebooking.service /etc/systemd/system/
 sudo systemctl daemon-reload

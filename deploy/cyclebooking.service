@@ -9,6 +9,9 @@ After=network.target
 # A user of its own, so the app can only write its own folders.
 User=cyclebooking
 WorkingDirectory=/opt/cyclebooking
+# The GS's smail address (comma-separated for the Warden too): they get the Report tab
+# and the Repaired button. Replace the address below before installing (docs/DEPLOY.md §4).
+Environment=CYCLEBOOKING_GS=gs-smail@smail.iitm.ac.in
 ExecStart=/usr/bin/java -Xmx512m -jar /opt/cyclebooking/cyclebooking.jar --spring.profiles.active=prod
 # Creates /var/lib/cyclebooking, owned by the user above. The SQLite file lives there,
 # so replacing the jar never touches it (application-prod.properties).
