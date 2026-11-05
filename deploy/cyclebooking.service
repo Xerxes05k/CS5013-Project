@@ -1,0 +1,21 @@
+# systemd unit for the live server (ADR 0006). Install as
+# /etc/systemd/system/cyclebooking.service; see docs/DEPLOY.md.
+
+[Unit]
+Description=Jamuna Hostel cycle booking
+After=network.target
+
+[Service]
+# A user of its own, so the app can only write its own folders.
+User=cyclebooking
+WorkingDirectory=/opt/cyclebooking
+ExecStart=/usr/bin/java -Xmx512m -jar /opt/cyclebooking/cyclebooking.jar --spring.profiles.active=prod
+# Creates /var/lib/cyclebooking, owned by the user above. The SQLite file lives there,
+# so replacing the jar never touches it (application-prod.properties).
+StateDirectory=cyclebooking
+# Back up after a crash; also starts at boot (WantedBy below).
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

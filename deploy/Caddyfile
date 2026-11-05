@@ -1,0 +1,8 @@
+# Caddy serves HTTPS for the live site (ADR 0006). It fetches and renews a free
+# Let's Encrypt certificate for the name below by itself, redirects http to https,
+# and passes each request to the app, which listens only on 127.0.0.1:8080.
+# Install as /etc/caddy/Caddyfile; replace the name with the DuckDNS name you created.
+
+jamuna-cycles.duckdns.org {
+	reverse_proxy 127.0.0.1:8080
+}

@@ -115,8 +115,8 @@ Until now the app has only run on our laptops. Residents use their own phones, s
 
 - [ ] **[BE · Yashas] Live by Fri 30 Oct**, as small PRs in this order:
   - [ ] ADR 0006 (0005 is the cycle-parts decision): choose the host. It must cost the hostel nothing (Warden's condition), keep files across restarts and redeploys (the SQLite database is a file on disk), and serve HTTPS (passcodes are sent at login). Check each free tier against all three before choosing; a hostel or department machine is the fallback.
-  - [ ] `prod` profile: no `data.sql` seeding (it carries the dev login with a published passcode), database path on the persistent disk, `cyclebooking.ocr.tessdata` set for the server
-  - [ ] A build that runs on the host: `./mvnw package` jar, plus a Dockerfile (Java 25 runtime, `tesseract-ocr` with English data) or the host's equivalent
+  - [x] `prod` profile: no `data.sql` seeding (it carries the dev login with a published passcode), database path on the persistent disk, `cyclebooking.ocr.tessdata` set for the server (Aditya, `application-prod.properties` + resident importer)
+  - [x] A build that runs on the host: `./mvnw package` jar, plus a Dockerfile (Java 25 runtime, `tesseract-ocr` with English data) or the host's equivalent (Aditya: plain jar under systemd + Caddy per ADR 0006, no Docker; steps in docs/DEPLOY.md)
   - [ ] First deploy, with real residents loaded and their own passcodes generated, never the dev one
   - [ ] Smoke test on the live URL from a phone: log in → scan ID → book → pickup → return. Then restart the service and check the booking is still there.
   - [ ] Live URL in README
