@@ -30,4 +30,11 @@ public interface BookingService {
 
     /** All of the resident's rentals, newest first, for the History tab. */
     List<HistoryEntry> history(long residentId);
+
+    /**
+     * Cancels the resident's booking before pickup and frees the cycle. Returns the
+     * cycle's label. Throws {@link BookingRejectedException} if there is no open booking
+     * or the cycle has already been picked up (that is a return, done at the stand).
+     */
+    String cancelBooking(long residentId);
 }
