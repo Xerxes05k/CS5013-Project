@@ -70,9 +70,10 @@ class DefaultTransactionService implements TransactionService {
         Instant now = clock.instant();
         booking.setReturnedAt(now);
         cycle.setLastReturnedAt(now);
-        cycle.setState(CycleState.AVAILABLE);
-        // Same transaction: if saving the guard's findings fails, the return is undone too.
-        maintenance.recordInspection(bookingId, brokenParts, guardConditionNote);
+        // The guard's findings decide where the cycle goes: AVAILABLE, or UNDER_REPAIR if
+        // a critical part is broken (ADR 0005). Same transaction, so if saving them fails
+        // the return is undone too.
+        cycle.setState(maintenance.recordInspection(bookingId, brokenParts, guardConditionNote));
         return cycle.getState();
     }
 

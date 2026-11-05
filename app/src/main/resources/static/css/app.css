@@ -30,8 +30,21 @@ h1 { font-size: 1.25rem; margin: 0 0 .25rem; }
 .card-head, .card-foot { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
 .card-foot { margin-top: .5rem; min-height: 44px; }
 .card-note { color: #57606a; font-size: .9rem; }
+.issues { margin: .4rem 0 0; padding: .3rem .6rem; border-radius: 6px; background: #fff8e5; color: var(--busy); font-size: .9rem; }
 
 .label { font-weight: 600; font-size: 1.1rem; }
+a.label { color: inherit; }
+
+/* Cycle detail: the 8 parts (ADR 0005). Condition in words and symbol, never colour alone. */
+.part-grid { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.part-tile { display: flex; flex-direction: column; gap: .15rem; padding: .7rem .8rem; border: 1px solid var(--line); border-radius: 10px; }
+.part-name { font-weight: 600; }
+.part-name small { color: var(--repair); font-weight: 400; font-size: .75rem; }
+.part-condition { font-size: .9rem; }
+.part-OK .part-condition { color: var(--free); }
+.part-REPORTED { background: #fff8e5; } .part-REPORTED .part-condition { color: var(--busy); }
+.part-BROKEN { background: #fdecea; } .part-BROKEN .part-condition { color: var(--repair); font-weight: 600; }
+.part-note { font-size: .85rem; color: #57606a; }
 
 .chip { padding: .2rem .65rem; border-radius: 999px; font-size: .85rem; font-weight: 600; white-space: nowrap; }
 .chip-AVAILABLE { color: var(--free); background: #e6f4ea; }
@@ -98,6 +111,13 @@ textarea { font-family: inherit; resize: vertical; }
 .report .num { text-align: right; }
 .report tfoot th, .report tfoot td { font-weight: 600; border-bottom: 0; }
 
+
+/* Return form: the guard's parts checklist, two columns of thumb-sized rows. */
+.parts { margin: .5rem 0 0; padding: .75rem; border: 1px solid var(--line); border-radius: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: .25rem .75rem; }
+.parts legend { padding: 0 .25rem; font-size: .9rem; color: #57606a; }
+.parts .part { display: flex; align-items: center; gap: .5rem; min-height: 44px; color: #1b1f24; font-size: 1rem; margin: 0; }
+.part input { width: 1.25rem; height: 1.25rem; margin: 0; }
+.part small { color: var(--repair); font-size: .75rem; }
 
 /* Report tab sub-tabs: Usage and Maintenance. */
 .subtabs { display: flex; gap: .5rem; margin-bottom: 1rem; }

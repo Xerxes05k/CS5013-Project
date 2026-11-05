@@ -8,7 +8,8 @@ import java.time.Instant;
  * One part of one cycle as pages show it: the cycle detail parts grid and the GS
  * screens (ADR 0005).
  *
- * @param note the last guard's or GS's words about this part, or null
+ * @param updatedAt when the part last changed, or null if it never has
+ * @param note      the last guard's or GS's words about this part, or null
  */
 public record PartStatus(Part part, PartCondition condition, Instant updatedAt, String note) {
 

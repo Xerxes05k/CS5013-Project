@@ -123,6 +123,7 @@ Every `POST` ends in a redirect (post-redirect-get), so refreshing a page never 
 | POST | `/login` | Spring Security | `ResidentDetailsService.loadUserByUsername`, BCrypt check | `/cycles` | `/login?error` |
 | GET | `/` | `CycleController.home` | — | `/cycles` | |
 | GET | `/cycles` | `CycleController.availability` | `getAvailability`, `currentResident`, `currentRental` | `cycles.html` | |
+| GET | `/cycles/{id}` | `CycleDetailController.detail` | `getAvailability`, `MaintenanceService.partsOf` | `cycle.html` | `/cycles` if no such cycle |
 | GET | `/cycles/{id}/verify` | `CycleController.verifyPage` | `getAvailability` | `verify.html` | `/cycles` if not bookable |
 | POST | `/cycles/{id}/book` (photo) | `CycleController.book` | `scanCard`, `createBooking` | `/rental` | `/cycles/{id}/verify` (ID failed) or `/cycles` (rule/lock) |
 | POST | `/cycles/{id}/book-typed` | `CycleController.bookWithTypedRoll` | `createBookingWithTypedRoll` | `/rental` | same as above |
@@ -346,7 +347,7 @@ flowchart TD
         L -- no --> X3[["reject 'note too long'"]]
         L -- yes --> P{passcode OK?}
         P -- no --> X4[["reject 'Wrong passcode'"]]
-        P -- yes --> W["booking.returnedAt = now<br/>cycle.lastReturnedAt = now<br/>cycle.state = AVAILABLE"]
+        P -- yes --> W["booking.returnedAt = now<br/>cycle.lastReturnedAt = now<br/>cycle.state = what recordInspection returns"]
         W --> G["MaintenanceService.recordInspection"]
         G --> GB{"no parts ticked<br/>AND note blank?"}
         GB -- yes --> GD[nothing saved]
@@ -388,17 +389,17 @@ stateDiagram-v2
     [*] --> AVAILABLE
     AVAILABLE --> BOOKED: createBooking · claimIfAvailable
     BOOKED --> ISSUED: confirmPickup · passcode OK
-    ISSUED --> AVAILABLE: confirmReturn · passcode OK
+    ISSUED --> AVAILABLE: confirmReturn · no critical part broken
+    ISSUED --> UNDER_REPAIR: confirmReturn · guard ticks a broken critical part
+    UNDER_REPAIR --> AVAILABLE: recordRepair (GS) · no critical part broken any more
     BOOKED --> AVAILABLE: no-show expiry / cancel · (planned)
-    AVAILABLE --> UNDER_REPAIR: GS marks for repair · (planned)
-    UNDER_REPAIR --> AVAILABLE: GS clears · (planned)
 ```
 
-Built today: the three transitions in the top cycle. A guard flag **does not** change the cycle's state; it only adds a row to `maintenance_flags`. `UNDER_REPAIR` exists in the enum and the seed data but nothing in the code sets or clears it yet.
+Built: every transition above except no-show expiry. A flag on its own never changes the state; only a part confirmed `BROKEN` does, through the rule below.
 
-### Cycle, once its parts decide the state (planned, week 5, ADR 0005)
+### How the parts decide the state (ADR 0005)
 
-Each cycle gets 8 parts with a condition (`OK` / `REPORTED` / `BROKEN`); see [SCHEMA.md §8](SCHEMA.md#8-planned-cycle-parts-decide-the-cycles-state-adr-0005). The two transitions out of the stand now depend on those properties:
+Each cycle gets 8 parts with a condition (`OK` / `REPORTED` / `BROKEN`); see [SCHEMA.md §8](SCHEMA.md#8-cycle-parts-decide-the-cycles-state-adr-0005). The two transitions out of the stand now depend on those properties:
 
 ```mermaid
 stateDiagram-v2
@@ -496,9 +497,10 @@ The DB connection pool has one connection (`spring.datasource.hikari.maximum-poo
 | Guard note at return → GUARD flag | built | 4 |
 | Post-return comment box | built | 4 |
 | Comment classifier → COMMENT flags | planned | 5 |
-| Cycle parts decide the state (`OK` / `REPORTED` / `BROKEN`, ADR 0005) | planned | 5 |
-| Tab navigation, cycle cards, cycle detail, history (UI.md) | planned | 4–5 |
-| GS maintenance list, resolve flags, `UNDER_REPAIR` | planned | 5 |
+| Cycle parts decide the state (`OK` / `REPORTED` / `BROKEN`, ADR 0005) | built (`REPORTED` waits for the classifier) | 5–7 |
+| Tab navigation, cycle cards, history (UI.md) | built | 4–7 |
+| Cycle detail page with the parts grid | in #13, merges after the cycle-parts PR | 7 |
+| GS maintenance list, resolve flags (`recordRepair`), `UNDER_REPAIR` | built (the Repaired button is not) | 5–7 |
 | GS-only role for `/report` | planned | 5 |
 | Booking cancel / no-show expiry | not yet scheduled | — |
 | GS override of rule limits | planned | 7 |

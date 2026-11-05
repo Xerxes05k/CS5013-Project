@@ -94,15 +94,15 @@ Every item below from week 4 on has a tag: **[BE]** backend, **[FE]** frontend, 
 **Goal: the classifier.**
 
 - [x] **[BE · Yashas] Contract PR first (ADR 0005):** `Part`, `PartCondition`, `PartStatus` record, new `MaintenanceService` / `TransactionService` signatures (SCHEMA.md §8)
-- [ ] **[BE · Yashas]** `CyclePart` entity + repository; 8 `OK` rows per cycle in `data.sql` (JAM-05: brakes `BROKEN`)
-- [ ] **[BE · Yashas]** `recordInspection` with the fit-to-ride rule; tests: broken brakes → `UNDER_REPAIR`, broken bell → `AVAILABLE`
-- [ ] **[BE · Yashas]** `confirmReturn` sets the state `recordInspection` returns; `recordRepair` for the GS
-- [x] **[BE · Aditya]** `CycleStatus.knownIssues` and `partsOf` for the cards and cycle detail (declared by Yashas in the contract PR #9; filled by the cycle-parts PR)
-- [ ] **[FE · Aditya]** Known issues on cycle cards; cycle detail page with the parts grid; parts checklist on the return form (PRs #11, #12; the detail page, #13, waits for `partsOf`)
+- [x] **[BE · Yashas]** `CyclePart` entity + repository; 8 `OK` rows per cycle in `data.sql` (JAM-05: brakes `BROKEN`) (built with "no row = OK" instead of 8 rows, so one-line cycle inserts still work; SCHEMA.md §8)
+- [x] **[BE · Yashas]** `recordInspection` with the fit-to-ride rule; tests: broken brakes → `UNDER_REPAIR`, broken bell → `AVAILABLE`
+- [x] **[BE · Yashas]** `confirmReturn` sets the state `recordInspection` returns; `recordRepair` for the GS
+- [x] **[BE · Aditya]** `CycleStatus.knownIssues` and `partsOf` for the cards and cycle detail (done by Yashas in the cycle-parts PR, alongside the table)
+- [x] **[FE · Aditya]** Known issues on cycle cards; cycle detail page with the parts grid; parts checklist on the return form (PRs #11, #12, #13)
 - [ ] **[BE · Yashas] CommentClassifier:** Apache OpenNLP model trained on the labeled set; precision/recall recorded in PROGRESS
 - [ ] **[BE · Yashas]** `MaintenanceService.submitComment` → flags (ADR 0003)
 - [ ] **[FE · Aditya]** after a comment, show the raw comment next to the flags it raised
-- [x] **[BE · Aditya] Reporting Module (v2):** `getMaintenanceList` combining guard notes + auto-flags; GS can mark a flag resolved (list in PR #7; resolving became `recordRepair` in ADR 0005)
+- [x] **[BE · Aditya] Reporting Module (v2):** `getMaintenanceList` combining guard notes + auto-flags (PR #7). Resolving a flag became `recordRepair` (built in #17); the GS's Repaired button for it is in the GS tab item below, still open.
 - [ ] **[FE · Aditya]** GS tab with Usage · Maintenance · Fleet sub-tabs; maintenance list shows raw comment / guard words and a "Repaired" button (UI.md §2) (Usage and Maintenance done in PR #7; Fleet and the Repaired button left)
 - [ ] **[BE · Yashas]** GS role in `SecurityConfig`: only the GS sees `/report` and the maintenance list
 - [x] Sunday PROGRESS entry (PR) (written late, on 29 Oct)
