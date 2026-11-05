@@ -99,11 +99,11 @@ Every item below from week 4 on has a tag: **[BE]** backend, **[FE]** frontend, 
 - [x] **[BE · Yashas]** `confirmReturn` sets the state `recordInspection` returns; `recordRepair` for the GS
 - [x] **[BE · Aditya]** `CycleStatus.knownIssues` and `partsOf` for the cards and cycle detail (done by Yashas in the cycle-parts PR, alongside the table)
 - [x] **[FE · Aditya]** Known issues on cycle cards; cycle detail page with the parts grid; parts checklist on the return form (PRs #11, #12, #13)
-- [ ] **[BE · Yashas] CommentClassifier:** Apache OpenNLP model trained on the labeled set; precision/recall recorded in PROGRESS
-- [ ] **[BE · Yashas]** `MaintenanceService.submitComment` → flags (ADR 0003)
-- [ ] **[FE · Aditya]** after a comment, show the raw comment next to the flags it raised
+- [ ] ~~**[BE · Yashas] CommentClassifier:** Apache OpenNLP model trained on the labeled set; precision/recall recorded in PROGRESS~~ **Cut (5 Nov):** cycle parts came first (mid-demo feedback); the 120-row labelled set stays in the repo
+- [ ] ~~**[BE · Yashas]** `MaintenanceService.submitComment` → flags (ADR 0003)~~ **Cut (5 Nov):** needs the classifier; comments are stored and shown, but raise no flags
+- [ ] ~~**[FE · Aditya]** after a comment, show the raw comment next to the flags it raised~~ **Cut (5 Nov):** no flags without the classifier
 - [x] **[BE · Aditya] Reporting Module (v2):** `getMaintenanceList` combining guard notes + auto-flags (PR #7). Resolving a flag became `recordRepair` (built in #17), with the GS's Repaired button in #19.
-- [ ] **[FE · Aditya]** GS tab with Usage · Maintenance · Fleet sub-tabs; maintenance list shows raw comment / guard words and a "Repaired" button (UI.md §2) (Usage and Maintenance in PR #7, the Repaired button in #19; the Fleet sub-tab is left)
+- [ ] **[FE · Aditya]** GS tab with Usage · Maintenance · Fleet sub-tabs; maintenance list shows raw comment / guard words and a "Repaired" button (UI.md §2) (Usage and Maintenance in PR #7, the Repaired button in #19). **Cut (5 Nov):** the Fleet sub-tab
 - [x] **[BE · Yashas]** GS role in `SecurityConfig`: only the GS sees `/report` and the maintenance list (built by Aditya in #19; the live server's GS address is set in the service file)
 - [x] Sunday PROGRESS entry (PR) (written late, on 29 Oct)
 
@@ -117,31 +117,31 @@ Until now the app has only run on our laptops. Residents use their own phones, s
   - [x] ADR 0006 (0005 is the cycle-parts decision): choose the host. It must cost the hostel nothing (Warden's condition), keep files across restarts and redeploys (the SQLite database is a file on disk), and serve HTTPS (passcodes are sent at login). Check each free tier against all three before choosing; a hostel or department machine is the fallback. (ADR 0006 chose Oracle, #15; Oracle needs a credit card, so ADR 0007 moved it to Azure for Students on 5 Nov)
   - [x] `prod` profile: no `data.sql` seeding (it carries the dev login with a published passcode), database path on the persistent disk, `cyclebooking.ocr.tessdata` set for the server (Aditya, `application-prod.properties` + resident importer)
   - [x] A build that runs on the host: `./mvnw package` jar, plus a Dockerfile (Java 25 runtime, `tesseract-ocr` with English data) or the host's equivalent (Aditya: plain jar under systemd + Caddy per ADR 0006, no Docker; steps in docs/DEPLOY.md)
-  - [ ] First deploy, with real residents loaded and their own passcodes generated, never the dev one
+  - [ ] First deploy, with real residents loaded and their own passcodes generated, never the dev one (pending the Azure for Students sign-up, ADR 0007)
   - [ ] Smoke test on the live URL from a phone: log in → scan ID → book → pickup → return. Then restart the service and check the booking is still there.
   - [ ] Live URL in README
 - [ ] **[FE · Aditya]** Phone pass before the pilot, **on the live URL**: every page on a real phone, camera opens straight from the ID-scan page, guard can read the pickup/return confirmation at arm's length
-- [ ] **[both]** Pilot on the live URL with the Jamuna GS + one guard shift, once the smoke test passes; log issues
-- [ ] **[BE · Aditya]** Verify usage-hours report against a week of the paper register (verification-plan fixture)
-- [ ] Sunday PROGRESS entry (PR)
+- [ ] ~~**[both]** Pilot on the live URL with the Jamuna GS + one guard shift, once the smoke test passes; log issues~~ **Cut (5 Nov):** not live in time
+- [ ] ~~**[BE · Aditya]** Verify usage-hours report against a week of the paper register (verification-plan fixture)~~ **Cut (5 Nov):** needs a week of pilot use to compare against
+- [x] Sunday PROGRESS entry (PR) (written late, on 5 Nov)
 
 ## Week 7 — 31 Oct–6 Nov  ← **final Fri 6 Nov**
 
 **Goal: hardening and handover.**
 
-- [ ] **[BE · Yashas]** GS manual override for rule limits (plan B, risk 4): service method + test
-- [ ] **[FE · Aditya]** GS override page
-- [ ] **[both]** Fix pilot issues, each in its own PR; final test pass (one test per module, all green)
-- [ ] **[both]** Handover doc for GS/guard (how to run, how to add a cycle, how to reset a limit)
-- [ ] Final PROGRESS entry; README status table updated
+- [ ] ~~**[BE · Yashas]** GS manual override for rule limits (plan B, risk 4): service method + test~~ **Cut (5 Nov):** no time after cycle parts and the GS role
+- [ ] ~~**[FE · Aditya]** GS override page~~ **Cut (5 Nov):** no override to show
+- [x] **[both]** Fix pilot issues, each in its own PR; final test pass (one test per module, all green) (no pilot, so no pilot issues; final pass: 126 tests, all green)
+- [x] **[both]** Handover doc for GS/guard (how to run, how to add a cycle, how to reset a limit) (`docs/HANDOVER.md`; no limit reset, since the override was cut)
+- [x] Final PROGRESS entry; README status table updated (the live URL goes in after the first deploy)
 
 ## Not scheduled yet
 
 Gaps found while writing [docs/SCHEMA.md](docs/SCHEMA.md#5-integrity-rules-and-where-each-is-enforced). Pick a week for each or drop it, and say so here.
 
 - [x] **[BE]** Booking cancel, **[FE]** cancel button on "My cycle" (Aditya, before pickup only; the cycle is freed and the booking deleted)
-- [ ] **[BE]** No-show expiry: a booking never picked up still holds the cycle until the resident cancels it (not built)
-- [ ] **[BE]** Turn on SQLite foreign keys (`PRAGMA foreign_keys = ON`) or record in an ADR why not
+- [ ] ~~**[BE]** No-show expiry: a booking never picked up still holds the cycle until the resident cancels it~~ **Cut (5 Nov):** cancel before pickup (#18) covers the common case
+- [ ] ~~**[BE]** Turn on SQLite foreign keys (`PRAGMA foreign_keys = ON`) or record in an ADR why not~~ **Cut (5 Nov):** left off; the gap is recorded in SCHEMA.md §5
 
 ---
 
