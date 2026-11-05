@@ -77,8 +77,8 @@ class DefaultReportingService implements ReportingService {
 
     private static MaintenanceItem toItem(MaintenanceFlag f) {
         String words = f.getComment() != null ? f.getComment().getText() : f.getNote();
-        return new MaintenanceItem(f.getId(), f.getCycle().getLabel(), f.getLabel(), f.getSource(), words,
-                f.getCreatedAt());
+        return new MaintenanceItem(f.getId(), f.getCycle().getId(), f.getCycle().getLabel(), f.getLabel(),
+                f.getSource(), words, f.getCreatedAt());
     }
 
     /** The part of [pickup, return-or-now) that falls inside [from, to). */

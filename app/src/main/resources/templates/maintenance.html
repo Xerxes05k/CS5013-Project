@@ -16,6 +16,8 @@
 </header>
 
 <main>
+    <p class="notice" th:if="${notice}" th:text="${notice}">JAM-05: brakes marked repaired.</p>
+    <p class="error" th:if="${error}" th:text="${error}">That cycle no longer exists.</p>
     <ul class="cards" th:unless="${byCycle.isEmpty()}">
         <li th:each="entry : ${byCycle}" class="card">
             <div class="card-head">
@@ -28,7 +30,13 @@
                         <span><span class="flag-issue" th:text="${flag.issue}">Guard note</span> · <span th:text="${flag.reportedBy}">Guard, at return</span></span>
                         <span th:text="${flag.when}">11 Oct, 6:40 pm</span>
                     </div>
-                    <p class="flag-words" th:text="${flag.words}">front brake loose</p>
+                    <p class="flag-words" th:if="${flag.words}" th:text="${flag.words}">front brake loose</p>
+                    <form th:if="${flag.repairable()}" th:action="@{/report/maintenance/repaired}" method="post" class="repair">
+                        <input type="hidden" name="cycleId" th:value="${flag.cycleId}">
+                        <input type="hidden" name="part" th:value="${flag.part.name()}">
+                        <input type="hidden" name="cycleLabel" th:value="${flag.cycleLabel}">
+                        <button type="submit">Repaired</button>
+                    </form>
                 </li>
             </ul>
         </li>

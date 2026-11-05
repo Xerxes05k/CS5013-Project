@@ -9,6 +9,6 @@ import java.time.Instant;
  *
  * @param words the guard's note for a GUARD flag, the resident's comment for a COMMENT flag
  */
-public record MaintenanceItem(long flagId, String cycleLabel, String label, FlagSource source, String words,
-        Instant raisedAt) {
+public record MaintenanceItem(long flagId, long cycleId, String cycleLabel, String label, FlagSource source,
+        String words, Instant raisedAt) {
 }

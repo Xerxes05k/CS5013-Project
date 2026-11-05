@@ -130,6 +130,8 @@ textarea { font-family: inherit; resize: vertical; }
 .flag-head { display: flex; justify-content: space-between; gap: 1rem; font-size: .9rem; color: #57606a; }
 .flag-issue { font-weight: 600; color: #1b1f24; }
 .flag-words { margin: .3rem 0 0; padding-left: .75rem; border-left: 3px solid var(--line); }
+.repair { margin: .4rem 0 0; }
+.repair button { margin: 0; padding: .45rem .9rem; min-height: 44px; font-size: .9rem; }
 
 /* Guard confirmation panel: read at arm's length, so large type, white on dark green
    (about 6:1 contrast). */

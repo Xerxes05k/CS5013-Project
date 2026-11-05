@@ -3,6 +3,7 @@ package in.ac.iitm.cs5013.cyclebooking.web;
 import in.ac.iitm.cs5013.cyclebooking.auth.AuthService;
 import in.ac.iitm.cs5013.cyclebooking.booking.BookingService;
 import java.security.Principal;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
@@ -29,5 +30,12 @@ class NavigationAdvice {
             return false;
         }
         return booking.currentRental(auth.currentResident(principal).residentId()).isPresent();
+    }
+
+    /** True for the GS: the Report tab is shown only to them (SecurityConfig enforces it). */
+    @ModelAttribute("isGs")
+    boolean isGs(Principal principal) {
+        return principal instanceof Authentication a
+                && a.getAuthorities().stream().anyMatch(g -> g.getAuthority().equals("ROLE_GS"));
     }
 }
