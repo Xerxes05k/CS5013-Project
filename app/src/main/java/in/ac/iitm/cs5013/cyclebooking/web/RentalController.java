@@ -1,6 +1,7 @@
 package in.ac.iitm.cs5013.cyclebooking.web;
 
 import in.ac.iitm.cs5013.cyclebooking.auth.AuthService;
+import in.ac.iitm.cs5013.cyclebooking.booking.BookingRejectedException;
 import in.ac.iitm.cs5013.cyclebooking.booking.BookingService;
 import in.ac.iitm.cs5013.cyclebooking.booking.CurrentRental;
 import in.ac.iitm.cs5013.cyclebooking.maintenance.CommentRejectedException;
@@ -105,6 +106,19 @@ public class RentalController {
         redirect.addFlashAttribute("confirmed",
                 new GuardConfirmation("Pickup confirmed", rental.get().cycleLabel(), detail));
         return "redirect:/rental";
+    }
+
+    /** Before pickup only: frees the cycle and goes back to the list. */
+    @PostMapping("/rental/cancel")
+    String cancel(Principal principal, RedirectAttributes redirect) {
+        try {
+            String label = booking.cancelBooking(auth.currentResident(principal).residentId());
+            redirect.addFlashAttribute("notice", "Booking for " + label + " cancelled. The cycle is free again.");
+            return "redirect:/cycles";
+        } catch (BookingRejectedException e) {
+            redirect.addFlashAttribute("error", e.getMessage());
+            return "redirect:/rental";
+        }
     }
 
     @PostMapping("/rental/return")
