@@ -255,8 +255,9 @@ classDiagram
 **Gaps to know about**
 
 1. **No foreign keys in the database.** The generated SQLite tables have no `FOREIGN KEY` clauses: Hibernate's community SQLite dialect doesn't emit them, and SQLite enforces them only when `PRAGMA foreign_keys = ON` is set. Today every insert goes through JPA with a loaded entity, so the ids are always real. A hand-written SQL insert could still create an orphan row.
+   - **The same dialect also drops multi-column unique constraints**, without a warning (found while building `cycle_parts`, #17). So `cycle_parts (cycle_id, part)` is enforced by a unique index that `CyclePartUniqueIndex` creates at startup, not by the entity annotation. That is the only multi-column constraint in the schema. Single-column unique fields (roll number, smail address, cycle label) are created and enforced by SQLite.
 2. **"One open booking per resident" has no DB constraint.** It holds today only because the app has a single DB connection (`hikari.maximum-pool-size=1`), so two booking transactions can't run at the same time. If the pool is ever enlarged, two simultaneous bookings by the *same* resident for *different* cycles could both pass the rule check. No test covers this.
-3. **A booking that is never picked up holds the cycle forever.** There's no cancel or expiry yet (listed under Blocked in PROGRESS).
+3. **A booking that is never picked up holds the cycle until the resident cancels it.** Cancel before pickup was added in #18; automatic no-show expiry is not built.
 
 ---
 
