@@ -50,7 +50,8 @@ public interface MaintenanceService {
 
     /**
      * The 8 parts of a cycle with their current condition, in {@link Part} order: the
-     * cycle detail page's parts grid and the GS's Fleet view.
+     * cycle detail page's parts grid and the GS's Fleet view. A part that has never
+     * changed is OK, with no time or note.
      */
     List<PartStatus> partsOf(long cycleId);
 

@@ -9,6 +9,8 @@ import in.ac.iitm.cs5013.cyclebooking.persistence.BookingRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Comment;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CommentRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Cycle;
+import in.ac.iitm.cs5013.cyclebooking.persistence.CyclePart;
+import in.ac.iitm.cs5013.cyclebooking.persistence.CyclePartRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.CycleState;
 import in.ac.iitm.cs5013.cyclebooking.persistence.FlagSource;
@@ -16,10 +18,12 @@ import in.ac.iitm.cs5013.cyclebooking.persistence.IdCheck;
 import in.ac.iitm.cs5013.cyclebooking.persistence.MaintenanceFlag;
 import in.ac.iitm.cs5013.cyclebooking.persistence.MaintenanceFlagRepository;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Part;
+import in.ac.iitm.cs5013.cyclebooking.persistence.PartCondition;
 import in.ac.iitm.cs5013.cyclebooking.persistence.Resident;
 import in.ac.iitm.cs5013.cyclebooking.persistence.ResidentRepository;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,6 +56,9 @@ class DefaultMaintenanceServiceTest {
     @Autowired
     private MaintenanceFlagRepository flags;
 
+    @Autowired
+    private CyclePartRepository parts;
+
     private long returnedId;
     private long openId;
     private long cycleId;
@@ -76,6 +83,7 @@ class DefaultMaintenanceServiceTest {
 
     @AfterEach
     void cleanUp() {
+        parts.deleteAll();
         flags.deleteAll();
         comments.deleteAll();
         bookings.deleteAll();
@@ -149,5 +157,25 @@ class DefaultMaintenanceServiceTest {
         assertThat(maintenance.recordInspection(returnedId, Set.of(), null)).isEqualTo(CycleState.AVAILABLE);
 
         assertThat(flags.findByCycleId(cycleId)).isEmpty();
+    }
+
+    @Test
+    void partsOf_listsAllEightPartsWithUnrecordedOnesOk() {
+        Cycle cycle = cycles.findById(cycleId).orElseThrow();
+        parts.save(new CyclePart(cycle, Part.BRAKES, PartCondition.BROKEN, FlagSource.GUARD,
+                Instant.parse("2026-11-05T05:00:00Z"), "front brake loose"));
+
+        List<PartStatus> statuses = maintenance.partsOf(cycleId);
+
+        assertThat(statuses).extracting(PartStatus::part).containsExactly(Part.values());
+        assertThat(statuses.get(Part.BRAKES.ordinal())).satisfies(brakes -> {
+            assertThat(brakes.condition()).isEqualTo(PartCondition.BROKEN);
+            assertThat(brakes.note()).isEqualTo("front brake loose");
+            assertThat(brakes.critical()).isTrue();
+        });
+        assertThat(statuses.get(Part.BELL.ordinal())).satisfies(bell -> {
+            assertThat(bell.condition()).isEqualTo(PartCondition.OK);
+            assertThat(bell.updatedAt()).isNull();
+        });
     }
 }
