@@ -31,3 +31,8 @@ docs/samples/real/
 # Secrets
 .env
 application-local.properties
+
+# Resident importer files (docs/DEPLOY.md): passcodes in plain text, and residents'
+# names and smail addresses. Never commit either.
+passcodes*.csv
+residents*.csv

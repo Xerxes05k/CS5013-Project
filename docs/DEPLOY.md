@@ -106,7 +106,7 @@ How the importer behaves:
 - **Residents already present are skipped,** so their passcodes stay the same. Running it again with a longer list only adds the new names.
 - **It never overwrites an existing `passcodes.csv`.** Move the old one away first.
 
-**`passcodes.csv` holds every new passcode in plain text.**
+**`passcodes.csv` holds every new passcode in plain text.** The importer creates it readable only by the `cyclebooking` user, and it is all or nothing: a bad line anywhere in the CSV stops the import before anyone is saved, with the line number in the error.
 - Copy it to the GS:
 
   ```bash
