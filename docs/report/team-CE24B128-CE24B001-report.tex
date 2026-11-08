@@ -16,6 +16,9 @@
 % Anything still red must be filled in before compiling the final PDF.
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
 
+% The evaluator's passcode is only in the submitted PDF, never in this public repository.
+\newcommand{\evalpass}{\textit{(given with the submission)}}
+
 \title{CS5013 Final Project Report \\
        \large\textit{Hostel Cycle Booking Web Portal for Jamuna Hostel}}
 \author{Yashas Katyal, CE24B128 \and Aditya Gautam, CE24B001}
@@ -47,7 +50,7 @@ submission commit, in the viva.%
 
 Jamuna Hostel lends a small pool of cycles through a paper register at the gate. Residents cannot see which cycles are free, the 24-hour and 3-per-week limits are not enforced, and a broken cycle is simply handed to the next person. We shipped a Java/Spring Boot web app (Thymeleaf, SQLite) that a resident uses on their own phone. They log in, pick a free cycle, and book it after OCR reads their ID card. At the stand they type their passcode while the guard watches; the guard has no device. At return they tick the parts the guard found broken, and a broken critical part sends the cycle to repair. The GS sees weekly usage hours and a maintenance list with a Repaired button. 126 automated tests pass. Scope change: the OpenNLP comment classifier was dropped; mid-demo feedback asked for a cycle's properties to decide its state, so per-part condition replaced it.
 
-Stakeholder verdict: accepted by the Jamuna GS (\todo{date}), with the hostel setup to follow once the physical side is ready at his end. The app was not deployed to a public URL by the submission date; it runs from the Docker image.
+Stakeholder verdict: accepted by the Jamuna GS (\todo{date}), with the hostel setup to follow once the physical side is ready at his end. Since 8 Nov it runs live at \url{https://3-26-193-82.sslip.io} on an AWS Free plan server (ADR 0008); the Docker image is for grading.
 
 \section{Course concepts used in the project}
 
@@ -81,7 +84,17 @@ Stakeholder verdict: accepted by the Jamuna GS (\todo{date}), with the hostel se
   # open http://localhost:8080, log in as ce24b128@smail.iitm.ac.in / cycle1234
 \end{verbatim}
 
-\textbf{Where the artefact lives after the course.} In the GitHub repository. A live deployment on an Azure for Students VM is prepared (ADR 0007, \texttt{docs/DEPLOY.md}, \texttt{docs/HANDOVER.md}) but was not done, so it does not run at the hostel yet.
+\textbf{Live site for the evaluator} (no setup needed):
+\begin{enumerate}[leftmargin=*,nosep]
+  \item Open \url{https://3-26-193-82.sslip.io} on a phone or laptop and log in as \texttt{nvk@iitm.ac.in} with passcode \texttt{\evalpass}.
+  \item \textbf{Cycles} tab: tap \textbf{Book} on a free cycle and photograph any card. The scan is refused, because no card shows roll \texttt{EVALUATOR}. After 3 tries the page offers typing the roll number: enter \texttt{EVALUATOR}.
+  \item \textbf{My cycle}: type the passcode to confirm pickup; the green panel is what the guard reads. Then return it with one part ticked (a critical part sends the cycle to repair). \textbf{History} lists the rental.
+  \item The GS screens (usage, maintenance list, Repaired) need a GS login; the Docker demo login above is one.
+\end{enumerate}
+
+\textbf{Where the artefact lives after the course.} Live at \url{https://3-26-193-82.sslip.io} on an AWS Free plan EC2 server (ADR 0008, deployed 8 Nov). It holds placeholder residents until the GS sends the hostel list. The credits last about 6 months; \texttt{docs/DEPLOY.md} and \texttt{docs/HANDOVER.md} let the hostel move or rerun it. The source is in the GitHub repository.
+
+\textbf{Stakeholder verdict.} Accepted by the Jamuna GS: satisfied with the work so far; the hostel setup (real residents, cycles, the guard briefing) follows once the physical side is ready on the GS's side.
 
 \textbf{Stakeholder quote (one sentence, verbatim).}
 \begin{quote}
@@ -92,16 +105,16 @@ Stakeholder verdict: accepted by the Jamuna GS (\todo{date}), with the hostel se
 \section{Known limitations}
 
 \begin{itemize}[leftmargin=*,nosep]
-  \item \textbf{OCR on cards other than the one we tested.} Real-card evidence is one IIT Madras card (9 of 10 photos read) plus 18 synthetic cards. Glare or another layout makes the scan fail, and the resident types their roll number after 3 tries. A misread (8 as 5 at 95+ confidence) is refused by the exact match with the login, so it costs a retry, not a wrong booking.
-  \item \textbf{Safety rules that rely on SQLite's single connection.} ``One open rental per resident'' is enforced in the service, not the database; it holds only because the pool has one connection. SQLite foreign keys are off, so hand-written SQL can leave orphan rows.
-  \item \textbf{Resident comments raise no flags.} With the classifier cut, a comment like ``brakes feel weak'' reaches the GS only as text; the cycle stays bookable until a guard marks the part broken.
+  \item \textbf{OCR on cards other than the one we tested.} Real-card evidence is one IIT Madras card (9 of 10 photos read) plus 18 synthetic cards. Glare or another layout makes the scan fail, and the resident types their roll number after 3 tries. A misread (8 as 5 at 95+ confidence) only costs a retry, since the roll number must equal the login.
+  \item \textbf{Safety rules that rely on SQLite's single connection.} ``One open rental per resident'' holds only because the pool has one connection; SQLite foreign keys are off, so hand-written SQL can leave orphans.
+  \item \textbf{Resident comments raise no flags.} With the classifier cut, a comment like ``brakes feel weak'' reaches the GS only as text; the cycle stays bookable until a guard marks it broken.
 \end{itemize}
 
 \section{Individual contributions}
 
 \begin{itemize}[leftmargin=*,nosep]
   \item \textbf{Yashas Katyal} (backend lead): skeleton, persistence, login, rule engine, race-safe booking lock, OCR prototype, guard note and comment box (weeks 0--4); cycle-parts contract and backend (\#9, \#17); production GS config (\#20); Azure hosting plan (\#21); final docs and handover guide (\#22); built and tested the Docker image (\#23); reviewed Aditya's PRs.
-  \item \textbf{Aditya Gautam} (frontend lead): ID check in booking, passcode pickup and return, usage report, real-card OCR fix (week 3); schema, flows and work-split docs; tab bar, cycle cards, guard panel, History, maintenance list, return checklist, known issues, cycle detail (\#3--\#7, \#11--\#13); cancel (\#18); GS role and Repaired button (\#19); prod profile, resident importer, deploy guide (\#16); Dockerfile (\#23); reviewed Yashas's PRs.
+  \item \textbf{Aditya Gautam} (frontend lead): ID check in booking, passcode pickup and return, usage report, real-card OCR fix (week 3); schema, flows and work-split docs; tab bar, cycle cards, guard panel, History, maintenance list, return checklist, known issues, cycle detail (\#3--\#7, \#11--\#13); cancel (\#18); GS role and Repaired button (\#19); prod profile, resident importer, deploy guide (\#16); Dockerfile (\#23); deployed it live on AWS (ADR 0008); reviewed Yashas's PRs.
   \item \textbf{Stakeholder liaison:} \todo{who talked to the GS}.
 \end{itemize}
 
