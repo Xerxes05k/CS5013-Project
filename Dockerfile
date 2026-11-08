@@ -10,8 +10,9 @@
 # The live server does NOT use this image: it runs the jar under systemd (ADR 0006/0007,
 # docs/DEPLOY.md). The database here lives inside the container and is reset each run.
 
-# 1. Build the jar with the project's own Maven wrapper.
-FROM eclipse-temurin:25-jdk AS build
+# 1. Build the jar with the project's own Maven wrapper. A jar runs on any CPU, so this
+#    stage runs on the builder's own platform: no emulation when building amd64 on a Mac.
+FROM --platform=$BUILDPLATFORM eclipse-temurin:25-jdk AS build
 WORKDIR /src
 COPY app/.mvn .mvn
 COPY app/mvnw app/pom.xml ./
