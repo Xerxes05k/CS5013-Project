@@ -1,0 +1,116 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=0.7in,top=0.6in,bottom=0.7in]{geometry}
+\usepackage{setspace}
+\setlength{\parskip}{0.3em}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{xcolor}
+\usepackage{calc}
+
+% Compact section headings.
+\usepackage[compact]{titlesec}
+\titlespacing*{\section}{0pt}{1.0ex plus .2ex minus .1ex}{0.4ex plus .1ex}
+
+% Anything still red must be filled in before compiling the final PDF.
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+
+% The evaluator's passcode is only in the submitted PDF, never in this public repository.
+\newcommand{\evalpass}{\textit{(given with the submission)}}
+
+\title{CS5013 Final Project Report \\
+       \large\textit{Hostel Cycle Booking Web Portal for Jamuna Hostel}}
+\author{Yashas Katyal, CE24B128 \and Aditya Gautam, CE24B001}
+\date{}
+
+\begin{document}
+\maketitle
+
+\vspace{-2.0em}
+
+\begin{description}[leftmargin=!,labelwidth=\widthof{\textbf{Submission commit:}},nosep,font=\bfseries]
+  \item[Team Name:]         Jamuna Wheels
+  \item[Repository:]      \url{https://github.com/Xerxes05k/CS5013-Project}
+  \item[Submission commit:] \texttt{f1547bfb12fb5a907da35cd981c64356d987c868} (2026-11-08)
+  \item[Docker image:]    \url{https://drive.google.com/drive/folders/17dAbq49Atsz-RRCil8peF1VSm7N6MUXu} (\texttt{jamuna-wheels-f1547bf.tar.gz}).
+  \item[Tagline:]         \textit{A phone web app that replaces Jamuna Hostel's paper cycle register: residents book a cycle after an ID-card check, confirm pickup and return with their passcode while the guard watches, and the GS sees usage and repairs.}
+\end{description}
+
+\textbf{AI-authorship clause.}
+\textit{%
+We used AI tools to help draft parts of this report.  The claims,
+numbers, commit references, stakeholder statements, and the Docker
+image are our own; the prose shaping may have been assisted.  We can
+defend every sentence of this report, and every line of code in the
+submission commit, in the viva.%
+}
+
+\section{Executive summary}
+
+Jamuna Hostel lends a small pool of cycles through a paper register at the gate. Residents cannot see which cycles are free, the 24-hour and 3-per-week limits are not enforced, and a broken cycle is simply handed to the next person. We shipped a Java/Spring Boot web app (Thymeleaf, SQLite) used on residents' own phones: book a free cycle after OCR reads your ID card, confirm pickup and return by typing your passcode while the guard (who has no device) watches, and tick the parts the guard found broken; a broken critical part sends the cycle to repair. The GS sees usage hours and a maintenance list with a Repaired button. 126 automated tests pass. Scope change: the OpenNLP comment classifier was dropped for per-part cycle condition, which mid-demo feedback asked for.
+
+Stakeholder verdict: accepted by the Jamuna GS (8 Nov 2026), with the hostel setup to follow once the physical side is ready at his end. Since 8 Nov it runs live at \url{https://3-26-193-82.sslip.io} on an AWS Free plan server (ADR 0008); the Docker image is for grading.
+
+\section{Course concepts used in the project}
+
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Module 2 -- Prompt and context engineering.} A standing context file gives Claude Code our hard constraints (Java only, zero cost, explainable code) and workflow. File: \texttt{CLAUDE.md}. Commit: \texttt{63bc00c}.
+  \item \textbf{Module 8 -- Version control workflow.} A branch per feature, short commits, pull requests (\#2--\#23) reviewed by the other member. File: \texttt{PLAN.md}. Commit: \texttt{63bc00c}.
+  \item \textbf{Module 5 -- Testing and documentation.} Two real threads book one cycle on real SQLite and exactly one wins (conditional \texttt{UPDATE}); an injected \texttt{Clock} tests the rules on their edges (23 h vs 25 h). Files: \texttt{DefaultBookingServiceTest}, \texttt{DefaultRuleServiceTest}, commit \texttt{4630526}. Seven ADRs and a schema doc from the real DDL: \texttt{docs/decisions/}, \texttt{d3d3a8f}.
+  \item \textbf{Module 4 -- Debugging and modular design.} A real ID card was rejected although every character was read; measuring each stage led to weakest-character confidence and a 3-version vote (3 $\to$ 9 of 10 photos read). File: \texttt{IdCardScanner.java}, commit \texttt{8556d7e}. One service interface per module, contract merged first so both sides were built in parallel: \texttt{Part.java}, \texttt{72b3895}.
+  \item \textbf{Module 8 -- Code review.} A reproducing test exposed a passcode-loss bug; the importer became all-or-nothing. File: \texttt{ResidentImporter.java}. Commit: \texttt{1356a9c}.
+  \item \textbf{Module 9 -- Secure defaults.} BCrypt passcodes, GS-only reports and repairs, no seed login in production. File: \texttt{SecurityConfig.java}. Commit: \texttt{21cf63f}.
+\end{itemize}
+
+\section{AI-usage summary}
+
+\textbf{Tools used.} Claude Code (Anthropic), by both of us; no other AI tools.
+
+\textbf{One substantive help.} Claude Code wrote the History tab end to end (service method, controller, page and tests) in one session; it merged as written (PR \#6).
+
+\textbf{One substantive failure caught in review.} The AI-written \texttt{ResidentImporter.java} saved residents line by line but wrote the passcode file only at the end, so a later bad line (a comma in a name) left earlier residents saved with passcodes nobody had. A reproducing test caught it in review (PR \#16). This is a silent partial failure from a missing transaction boundary, in the vocabulary of Module 8 (Limitations, Evaluation, and Best Practices).
+
+\textbf{Net-effect sentence.} Net help: from 27 Oct to 5 Nov we merged 20 PRs and went from 61 tests (mid-demo) to 126. The cost was review time, which is what caught the bug above.
+
+\section{Deployment and stakeholder handoff}
+
+\textbf{Build and run.}
+\begin{verbatim}
+  docker load -i jamuna-wheels-f1547bf.tar.gz
+  docker run --rm -p 8080:8080 jamuna-wheels:f1547bf
+  # open http://localhost:8080, log in as ce24b128@smail.iitm.ac.in / cycle1234
+\end{verbatim}
+
+\textbf{Live site for the evaluator} (no setup needed):
+\begin{enumerate}[leftmargin=*,nosep]
+  \item Open \url{https://3-26-193-82.sslip.io}; log in as \texttt{nvk@iitm.ac.in}, passcode \texttt{\evalpass}.
+  \item \textbf{Cycles}: \textbf{Book} a free cycle and photograph any card; after 3 refused scans, type roll \texttt{EVALUATOR}.
+  \item \textbf{My cycle}: passcode to pick up (the green panel is what the guard reads), then return with a part ticked; see \textbf{History}. GS screens: use the Docker demo login.
+\end{enumerate}
+
+\textbf{Where the artefact lives after the course.} Live at \url{https://3-26-193-82.sslip.io} (AWS Free plan EC2, ADR 0008, since 8 Nov) with placeholder residents until the GS's list arrives; credits last about 6 months, and \texttt{docs/DEPLOY.md} lets the hostel move it. Source on GitHub.
+
+\textbf{Stakeholder verdict: accepted; hostel setup to follow. Quote (verbatim):}
+\begin{quote}
+\textit{``I am satisfied with the progress so far; the remaining setup can be done later, as the physical part of the project in the hostel is yet to be done from my side.''\\
+-- Nizamuddin, General Secretary, Jamuna Hostel, 8 Nov 2026.}
+\end{quote}
+
+\section{Known limitations}
+
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{OCR on cards other than the one we tested.} Evidence is one real IIT Madras card (9 of 10 photos) and 18 synthetic ones; glare or another layout fails the scan, so the resident types their roll number after 3 tries; a misread only costs a retry, as the roll must match the login.
+  \item \textbf{Safety rules that rely on SQLite's single connection.} ``One open rental per resident'' holds only because the pool has one connection; SQLite foreign keys are off, so hand-written SQL can leave orphans.
+  \item \textbf{Resident comments raise no flags.} With the classifier cut, a comment like ``brakes feel weak'' reaches the GS only as text; the cycle stays bookable until a guard marks it broken.
+\end{itemize}
+
+\section{Individual contributions}
+
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Yashas Katyal} (backend lead): skeleton, login, rule engine, race-safe booking lock, OCR prototype, guard note and comments (weeks 0--4); cycle-parts backend (\#9, \#17); GS config (\#20); Azure hosting plan (\#21); final docs and handover (\#22); built the Docker image; reviewed Aditya's PRs.
+  \item \textbf{Aditya Gautam} (frontend lead): ID check, passcode pickup/return, usage report, OCR fix (week 3); schema and flows docs; all UI pages (\#3--\#7, \#11--\#13); cancel (\#18); GS role (\#19); prod profile, importer, Dockerfile (\#16, \#23); the live AWS deploy; reviewed Yashas's PRs.
+  \item \textbf{Stakeholder liaison:} both of us, with Nizamuddin (General Secretary, Jamuna Hostel).
+\end{itemize}
+
+\end{document}
