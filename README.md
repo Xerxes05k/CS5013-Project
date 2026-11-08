@@ -13,7 +13,7 @@ A Java/Spring Boot web portal that replaces Jamuna Hostel's paper cycle register
 | Proposal | 21 Aug 2026 | Submitted, approved after scope revision |
 | Design doc | 11 Sep 2026 | Submitted |
 | Mid-demo | 12 Oct 2026 | Done. Feedback and what changed: [PROGRESS.md](docs/PROGRESS.md), Week 5. Schema: [SCHEMA.md](docs/SCHEMA.md). Flows: [FLOWS.md](docs/FLOWS.md) |
-| Live on a public URL | 30 Oct 2026 | Missed. Host moved to an AWS Free plan EC2 instance ([ADR 0008](docs/decisions/0008-host-on-aws-free-plan-ec2.md)) after the Azure for Students sign-up was refused; first deploy pending, steps in [DEPLOY.md](docs/DEPLOY.md) |
+| Live on a public URL | 30 Oct 2026 | Missed, then **live on 8 Nov 2026: https://3-26-193-82.sslip.io** (AWS Free plan EC2 instance, [ADR 0008](docs/decisions/0008-host-on-aws-free-plan-ec2.md)). Loaded with placeholder residents CE24B001-CE24B130 and 8 sample cycles until the GS sends the real list |
 | Final submission | 6 Nov 2026 | Code and docs final on `main` (5 Nov). What was built and what was cut: [PROGRESS.md](docs/PROGRESS.md), final entry. How to use it: [HANDOVER.md](docs/HANDOVER.md) |
 
 Weekly progress is logged in [docs/PROGRESS.md](docs/PROGRESS.md). Since the mid-demo, every change goes in through a short pull request, reviewed by the other team member until 5 Nov, when Aditya handed the last work to Yashas (see "Team and work split" in [PLAN.md](PLAN.md)).

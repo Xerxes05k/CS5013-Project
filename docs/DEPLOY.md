@@ -2,7 +2,7 @@
 
 Step by step, for the setup chosen in [ADR 0008](decisions/0008-host-on-aws-free-plan-ec2.md) (host: an AWS Free plan EC2 instance) and [ADR 0006](decisions/0006-host-on-oracle-always-free-vm.md) (the jar under `systemd`, Caddy for HTTPS). Commands after step 1 run on the server over `ssh` unless marked **laptop**.
 
-Placeholders: `jamuna-cycles.duckdns.org` stands for the DuckDNS name you create in step 1. `ubuntu` is the login user on AWS's Ubuntu images.
+Placeholders: `3.26.193.82` and `3-26-193-82.sslip.io` are the live server's IP and name; use your own if you build a new server. `ubuntu` is the login user on AWS's Ubuntu images.
 
 ---
 
@@ -18,7 +18,7 @@ Placeholders: `jamuna-cycles.duckdns.org` stands for the DuckDNS name you create
    ssh-keygen -t ed25519
    ```
 
-4. **EC2 (region Asia Pacific (Mumbai), `ap-south-1`) → Launch instance:**
+4. **EC2 (the live server is in Asia Pacific (Sydney), `ap-southeast-2`; any region works if every step uses the same one) → Launch instance:**
    - Name `jamuna-cycles`
    - Image: **Ubuntu Server 24.04 LTS (64-bit x86)**
    - Instance type: **t3.small** (marked Free tier eligible)
@@ -28,13 +28,15 @@ Placeholders: `jamuna-cycles.duckdns.org` stands for the DuckDNS name you create
      - **HTTP (80) from anywhere**
      - **HTTPS (443) from anywhere**
    - Storage: **20 GiB gp3**
-5. **Give it a fixed address:** EC2 → Elastic IPs → Allocate, then Associate it with the instance. Call this address `SERVER_IP`.
-6. **Give it a name:** sign in at duckdns.org (free) and create `jamuna-cycles`, pointing at `SERVER_IP`. The site will be `https://jamuna-cycles.duckdns.org`.
+5. **Its name:** take the instance's **Public IPv4 address**, say `3.26.193.82`, and write it with dashes plus `.sslip.io`:
+   - for example `3-26-193-82.sslip.io`, which sslip.io resolves to that IP with no account needed;
+   - put that name in the Caddyfile (step 4).
+   - **Don't stop the instance:** a stop/start gives it a new IP, and so a new name. To make the address permanent, allocate an **Elastic IP** (EC2 → Elastic IPs → Allocate → Associate) and use its dashed form instead.
 
 ## 2. Install Java 25, Tesseract, Caddy (once)
 
 ```bash
-ssh ubuntu@jamuna-cycles.duckdns.org
+ssh ubuntu@3.26.193.82
 
 # t3.small has 2 GiB of RAM; a 2 GB swap file is a safety margin for Java plus Tesseract.
 sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
@@ -64,7 +66,7 @@ sudo mkdir -p /opt/cyclebooking && sudo chown cyclebooking: /opt/cyclebooking
 
 ```bash
 cd app && ./mvnw test && ./mvnw package -DskipTests
-scp target/cyclebooking-0.0.1-SNAPSHOT.jar ../deploy/cyclebooking.service ../deploy/Caddyfile ubuntu@jamuna-cycles.duckdns.org:/tmp/
+scp target/cyclebooking-0.0.1-SNAPSHOT.jar ../deploy/cyclebooking.service ../deploy/Caddyfile ubuntu@3.26.193.82:/tmp/
 ```
 
 On the VM:
@@ -88,7 +90,7 @@ sudo cp /tmp/Caddyfile /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 ```
 
-Open `https://jamuna-cycles.duckdns.org` on a phone. You should see the login page with a padlock.
+Open `https://3-26-193-82.sslip.io` on a phone. You should see the login page with a padlock.
 
 The first start creates the empty tables in `/var/lib/cyclebooking/cyclebooking.db`. There is **no** dev login on the server: `data.sql` is switched off in the `prod` profile.
 
@@ -105,7 +107,7 @@ sudo -u cyclebooking sqlite3 /var/lib/cyclebooking/cyclebooking.db \
 
 ```bash
 # laptop
-scp residents.csv ubuntu@jamuna-cycles.duckdns.org:/tmp/
+scp residents.csv ubuntu@3.26.193.82:/tmp/
 
 # VM: stop the service so only one program writes the database, then run the importer.
 sudo systemctl stop cyclebooking
@@ -131,7 +133,7 @@ How the importer behaves:
   then from your laptop:
 
   ```bash
-  scp ubuntu@jamuna-cycles.duckdns.org:/tmp/p.csv .
+  scp ubuntu@3.26.193.82:/tmp/p.csv .
   ```
 
 - Then delete both copies on the VM:

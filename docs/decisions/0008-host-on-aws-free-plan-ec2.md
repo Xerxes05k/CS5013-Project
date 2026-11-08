@@ -1,6 +1,6 @@
 # ADR 0008: Host on an AWS Free plan EC2 instance instead of Azure for Students
 
-**Date:** 2026-11-08 · **Status:** Accepted (the first deploy confirms it) · **Supersedes:** the host choice in [ADR 0007](0007-host-on-azure-for-students-vm.md)
+**Date:** 2026-11-08 · **Status:** Accepted, deployed 8 Nov 2026 at https://3-26-193-82.sslip.io · **Supersedes:** the host choice in [ADR 0007](0007-host-on-azure-for-students-vm.md)
 
 ## Context
 
@@ -19,11 +19,11 @@ The team can provide a card for verification, so the AWS Free plan is now possib
 ## Decision
 
 1. **Run on one EC2 instance under the AWS Free plan:**
-   - region Asia Pacific (Mumbai), `ap-south-1`;
+   - region Asia Pacific (Sydney), `ap-southeast-2`: the new account's console wouldn't switch to Mumbai at first launch. Pages are a little slower from India, which is acceptable for the pilot;
    - Ubuntu Server 24.04 LTS, x86;
    - size **`t3.small`** (2 vCPU, 2 GiB), Free-plan eligible;
    - x86, so OpenCV's bundled native library loads; the ARM risk in ADR 0006 doesn't apply.
-2. **An Elastic IP** keeps the address fixed across stops and starts. A **free DuckDNS name** points at it, because Let's Encrypt needs a domain name and AWS's own `amazonaws.com` host names aren't a reliable fit for a certificate.
+2. **The name is `3-26-193-82.sslip.io`.** sslip.io answers any `<ip>.sslip.io` name with that IP, with no account, and Let's Encrypt issues a certificate for it. This replaced the planned DuckDNS name: one fewer sign-up. Because the name contains the IP, **the instance must not be stopped** until an Elastic IP is attached (a stop/start changes the public IP).
 3. **Open only what is needed.** The security group allows SSH (22) from our own IP, and HTTP (80) and HTTPS (443) from anywhere.
 4. **Everything else in ADR 0006 stays the same:**
    - the jar under `systemd`, no Docker on the server;

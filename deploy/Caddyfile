@@ -1,8 +1,8 @@
 # Caddy serves HTTPS for the live site (ADR 0006). It fetches and renews a free
 # Let's Encrypt certificate for the name below by itself, redirects http to https,
 # and passes each request to the app, which listens only on 127.0.0.1:8080.
-# Install as /etc/caddy/Caddyfile; the name is the DuckDNS name from docs/DEPLOY.md step 1.
+# Install as /etc/caddy/Caddyfile; the name is the server's IP with dashes plus .sslip.io (docs/DEPLOY.md step 1).
 
-jamuna-cycles.duckdns.org {
+3-26-193-82.sslip.io {
 	reverse_proxy 127.0.0.1:8080
 }
