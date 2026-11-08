@@ -55,7 +55,7 @@ Stakeholder verdict: \todo{accepted / partially accepted / not accepted, by the 
 
 \begin{itemize}[leftmargin=*,nosep]
   \item \textbf{Module \todo{n} -- Prompt and context engineering.} A standing context file gives Claude Code the hard constraints (Java only, zero cost, explainable code), conventions and PR workflow every session. File: \texttt{CLAUDE.md}. Commit: \texttt{63bc00c}.
-  \item \textbf{Module \todo{n} -- Version control workflow.} One branch per feature, short commits, every PR reviewed and merged by the other member (PRs \#2--\#23); the weekly script refuses to run on \texttt{main}. Files: \texttt{PLAN.md} (Team and work split), \texttt{scripts/weekly-update.sh}. Commit: \texttt{63bc00c}.
+  \item \textbf{Module \todo{n} -- Version control workflow.} One branch per feature and short commits, merged through pull requests (\#2--\#23), reviewed by the other member until the 5 Nov handover; the weekly script refuses to run on \texttt{main}. Files: \texttt{PLAN.md} (Team and work split), \texttt{scripts/weekly-update.sh}. Commit: \texttt{63bc00c}.
   \item \textbf{Module \todo{n} -- Testing concurrency.} Two real threads book the same cycle on real SQLite (deliberately not \texttt{@Transactional}); exactly one wins via a conditional \texttt{UPDATE}. File: \texttt{DefaultBookingServiceTest.java}, \texttt{CycleRepository.java}. Commit: \texttt{4630526}.
   \item \textbf{Module \todo{n} -- Testable time.} An injected \texttt{java.time.Clock} lets rule tests sit exactly on the edges (23 h vs 25 h held, 3rd vs 4th booking in 7 days). Files: \texttt{ClockConfig.java}, \texttt{DefaultRuleServiceTest.java}. Commit: \texttt{4630526}.
   \item \textbf{Module \todo{n} -- Systematic debugging.} A real ID card was rejected although every character was read; measuring each stage led to weakest-character confidence and a 3-version vote, raising reads from 3 to 9 out of 10 photos. File: \texttt{IdCardScanner.java}. Commit: \texttt{8556d7e}.
@@ -77,7 +77,7 @@ Claude Code wrote the History tab end to end (\texttt{BookingService.history}, \
 The AI-written \texttt{ResidentImporter.java} saved each resident as it read the CSV but wrote the passcode file only at the end. A later malformed line, such as a comma inside a name, left earlier residents saved with passcodes nobody had. A reproducing test caught this in review before merge (PR \#16). This is a silent partial failure from a missing transaction boundary, in the vocabulary of Module \todo{Lecture 8/9 module name}.
 
 \textbf{Net-effect sentence.}
-Net help: between 27 Oct and 5 Nov we merged 20 reviewed PRs and went from 61 tests (mid-demo) to 126. The cost was review time, and the bug above would have locked real residents out had review not caught it.
+Net help: between 27 Oct and 5 Nov we merged 20 PRs and went from 61 tests (mid-demo) to 126. The cost was review time, and the bug above would have locked real residents out had review not caught it.
 
 \section{Deployment and stakeholder handoff}
 
