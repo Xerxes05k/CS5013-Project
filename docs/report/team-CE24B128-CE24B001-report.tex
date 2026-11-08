@@ -100,7 +100,7 @@ Stakeholder verdict: accepted by the Jamuna GS (8 Nov 2026), with the hostel set
 \section{Known limitations}
 
 \begin{itemize}[leftmargin=*,nosep]
-  \item \textbf{OCR on cards other than the one we tested.} Evidence is one real IIT Madras card (9 of 10 photos) and 18 synthetic ones; glare or another layout fails the scan, so the resident types their roll number after 3 tries.
+  \item \textbf{OCR on cards other than the one we tested.} Evidence is one real IIT Madras card (9 of 10 photos) and 18 synthetic ones; glare or another layout fails the scan, so the resident types their roll number after 3 tries; a misread only costs a retry, as the roll must match the login.
   \item \textbf{Safety rules that rely on SQLite's single connection.} ``One open rental per resident'' holds only because the pool has one connection; SQLite foreign keys are off, so hand-written SQL can leave orphans.
   \item \textbf{Resident comments raise no flags.} With the classifier cut, a comment like ``brakes feel weak'' reaches the GS only as text; the cycle stays bookable until a guard marks it broken.
 \end{itemize}
@@ -108,7 +108,7 @@ Stakeholder verdict: accepted by the Jamuna GS (8 Nov 2026), with the hostel set
 \section{Individual contributions}
 
 \begin{itemize}[leftmargin=*,nosep]
-  \item \textbf{Yashas Katyal} (backend lead): skeleton, login, rule engine, race-safe booking lock, OCR prototype, guard note and comments (weeks 0--4); cycle-parts backend (\#9, \#17); GS config (\#20); final docs and handover (\#22); built the Docker image; reviewed Aditya's PRs.
+  \item \textbf{Yashas Katyal} (backend lead): skeleton, login, rule engine, race-safe booking lock, OCR prototype, guard note and comments (weeks 0--4); cycle-parts backend (\#9, \#17); GS config (\#20); Azure hosting plan (\#21); final docs and handover (\#22); built the Docker image; reviewed Aditya's PRs.
   \item \textbf{Aditya Gautam} (frontend lead): ID check, passcode pickup/return, usage report, OCR fix (week 3); schema and flows docs; all UI pages (\#3--\#7, \#11--\#13); cancel (\#18); GS role (\#19); prod profile, importer, Dockerfile (\#16, \#23); the live AWS deploy; reviewed Yashas's PRs.
   \item \textbf{Stakeholder liaison:} both of us, with Nizamuddin (General Secretary, Jamuna Hostel).
 \end{itemize}
