@@ -1,41 +1,42 @@
 # Deploying the live site
 
-Step by step, for the setup chosen in [ADR 0007](decisions/0007-host-on-azure-for-students-vm.md) (host) and [ADR 0006](decisions/0006-host-on-oracle-always-free-vm.md) (everything else): an Azure for Students VM, the jar run by `systemd`, and Caddy in front for HTTPS. Commands after step 1 run on the VM over `ssh` unless marked **laptop**.
+Step by step, for the setup chosen in [ADR 0008](decisions/0008-host-on-aws-free-plan-ec2.md) (host: an AWS Free plan EC2 instance) and [ADR 0006](decisions/0006-host-on-oracle-always-free-vm.md) (the jar under `systemd`, Caddy for HTTPS). Commands after step 1 run on the server over `ssh` unless marked **laptop**.
 
-Placeholders: `jamuna-cycles.centralindia.cloudapp.azure.com` stands for the VM's DNS name (step 1). `azureuser` is the admin username you pick when creating the VM.
+Placeholders: `jamuna-cycles.duckdns.org` stands for the DuckDNS name you create in step 1. `ubuntu` is the login user on AWS's Ubuntu images.
 
 ---
 
-## 1. Create the VM (once, in a browser)
+## 1. Create the server (once, in a browser)
 
-1. **Sign up at azure.microsoft.com/free/students** with your smail address. Microsoft checks you are a student through that address. No credit card is asked for. You get $100 of credit for 12 months.
-2. **laptop:** make an SSH key if you don't have one (`ls ~/.ssh/id_ed25519.pub`):
+1. **Sign up at aws.amazon.com and choose the Free plan.**
+   - A card is asked for verification. The Free plan uses AWS credits ($100 at sign-up, up to $100 more) and doesn't charge the card.
+   - The account closes after about 6 months unless upgraded (ADR 0008).
+2. **Billing → Budgets → Create budget → "Zero spend budget"** with your email, so anything that would cost money is reported straight away.
+3. **laptop:** make an SSH key if you don't have one (`ls ~/.ssh/id_ed25519.pub`):
 
    ```bash
    ssh-keygen -t ed25519
    ```
 
-3. **Portal → Virtual machines → Create:**
-   - Region: **Central India**
-   - Image: **Ubuntu Server 24.04 LTS - x64 Gen2**
-   - Size: **Standard_B1s** (it says "Free services eligible")
-   - Authentication: **SSH public key**, username `azureuser`, and paste the contents of `~/.ssh/id_ed25519.pub`
-   - Public inbound ports: **SSH (22), HTTP (80), HTTPS (443)**
-   - Disks: keep the default OS disk
-   - Management: check that **auto-shutdown is off**
-
-4. **Give it a name:** VM → Overview → click the public IP → Configuration.
-   - Set **DNS name label** to `jamuna-cycles`. The VM is then reachable at `jamuna-cycles.centralindia.cloudapp.azure.com`.
-   - Check that the IP assignment is **Static**, so the name keeps pointing at the VM.
-
-If Azure won't accept the student sign-up, see the fallback in ADR 0007: a laptop and a Cloudflare quick tunnel, for the demo only.
+4. **EC2 (region Asia Pacific (Mumbai), `ap-south-1`) → Launch instance:**
+   - Name `jamuna-cycles`
+   - Image: **Ubuntu Server 24.04 LTS (64-bit x86)**
+   - Instance type: **t3.small** (marked Free tier eligible)
+   - Key pair: **Import key pair** (under Network & Security → Key Pairs), paste `~/.ssh/id_ed25519.pub`, and choose it here
+   - Network: create a security group allowing:
+     - **SSH (22) from My IP**
+     - **HTTP (80) from anywhere**
+     - **HTTPS (443) from anywhere**
+   - Storage: **20 GiB gp3**
+5. **Give it a fixed address:** EC2 → Elastic IPs → Allocate, then Associate it with the instance. Call this address `SERVER_IP`.
+6. **Give it a name:** sign in at duckdns.org (free) and create `jamuna-cycles`, pointing at `SERVER_IP`. The site will be `https://jamuna-cycles.duckdns.org`.
 
 ## 2. Install Java 25, Tesseract, Caddy (once)
 
 ```bash
-ssh azureuser@jamuna-cycles.centralindia.cloudapp.azure.com
+ssh ubuntu@jamuna-cycles.duckdns.org
 
-# B1s has 1 GiB of RAM; a 2 GB swap file keeps Java and Tesseract from running out.
+# t3.small has 2 GiB of RAM; a 2 GB swap file is a safety margin for Java plus Tesseract.
 sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
 sudo mkswap /swapfile && sudo swapon /swapfile
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
@@ -63,7 +64,7 @@ sudo mkdir -p /opt/cyclebooking && sudo chown cyclebooking: /opt/cyclebooking
 
 ```bash
 cd app && ./mvnw test && ./mvnw package -DskipTests
-scp target/cyclebooking-0.0.1-SNAPSHOT.jar ../deploy/cyclebooking.service ../deploy/Caddyfile azureuser@jamuna-cycles.centralindia.cloudapp.azure.com:/tmp/
+scp target/cyclebooking-0.0.1-SNAPSHOT.jar ../deploy/cyclebooking.service ../deploy/Caddyfile ubuntu@jamuna-cycles.duckdns.org:/tmp/
 ```
 
 On the VM:
@@ -87,7 +88,7 @@ sudo cp /tmp/Caddyfile /etc/caddy/Caddyfile
 sudo systemctl reload caddy
 ```
 
-Open `https://jamuna-cycles.centralindia.cloudapp.azure.com` on a phone. You should see the login page with a padlock.
+Open `https://jamuna-cycles.duckdns.org` on a phone. You should see the login page with a padlock.
 
 The first start creates the empty tables in `/var/lib/cyclebooking/cyclebooking.db`. There is **no** dev login on the server: `data.sql` is switched off in the `prod` profile.
 
@@ -104,7 +105,7 @@ sudo -u cyclebooking sqlite3 /var/lib/cyclebooking/cyclebooking.db \
 
 ```bash
 # laptop
-scp residents.csv azureuser@jamuna-cycles.centralindia.cloudapp.azure.com:/tmp/
+scp residents.csv ubuntu@jamuna-cycles.duckdns.org:/tmp/
 
 # VM: stop the service so only one program writes the database, then run the importer.
 sudo systemctl stop cyclebooking
@@ -130,7 +131,7 @@ How the importer behaves:
   then from your laptop:
 
   ```bash
-  scp azureuser@jamuna-cycles.centralindia.cloudapp.azure.com:/tmp/p.csv .
+  scp ubuntu@jamuna-cycles.duckdns.org:/tmp/p.csv .
   ```
 
 - Then delete both copies on the VM:
