@@ -1,0 +1,10 @@
+# Only app/ is needed to build the image (see Dockerfile).
+.git
+app/target
+app/data
+docs
+notes
+scripts
+deploy
+*.csv
+*.db
