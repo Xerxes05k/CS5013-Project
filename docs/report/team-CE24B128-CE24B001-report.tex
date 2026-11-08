@@ -1,0 +1,128 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=0.7in,top=0.6in,bottom=0.7in]{geometry}
+\usepackage{setspace}
+\setlength{\parskip}{0.3em}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{xcolor}
+\usepackage{calc}
+
+% Compact section headings.
+\usepackage[compact]{titlesec}
+\titlespacing*{\section}{0pt}{1.0ex plus .2ex minus .1ex}{0.4ex plus .1ex}
+
+% Anything still red must be filled in before compiling the final PDF.
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+
+\title{CS5013 Final Project Report \\
+       \large\textit{Hostel Cycle Booking Web Portal for Jamuna Hostel}}
+\author{Yashas Katyal, CE24B128 \and Aditya Gautam, CE24B001}
+\date{}
+
+\begin{document}
+\maketitle
+
+\vspace{-2.0em}
+
+\begin{description}[leftmargin=!,labelwidth=\widthof{\textbf{Submission commit:}},nosep,font=\bfseries]
+  \item[Team Name:]         Jamuna Wheels
+  \item[Repository:]      \url{https://github.com/Xerxes05k/CS5013-Project}
+  \item[Submission commit:] \texttt{\todo{40-char SHA of the commit tagged final-submission}} (date: \texttt{\todo{YYYY-MM-DD}}).
+  \item[Docker image:]    \todo{Google Drive link, view access to course staff}
+  \item[Tagline:]         \textit{A phone web app that replaces Jamuna Hostel's paper cycle register: residents book a cycle after an ID-card check, confirm pickup and return with their passcode while the guard watches, and the GS sees usage and repairs.}
+\end{description}
+
+\textbf{AI-authorship clause.}
+\textit{%
+We used AI tools to help draft parts of this report.  The claims,
+numbers, commit references, stakeholder statements, and the Docker
+image are our own; the prose shaping may have been assisted.  We can
+defend every sentence of this report, and every line of code in the
+submission commit, in the viva.%
+}
+
+\section{Executive summary}
+
+Jamuna Hostel lends a small pool of cycles through a paper register at the gate. Residents cannot see which cycles are free, the 24-hour and 3-per-week limits are not enforced, and a broken cycle is simply handed to the next person.
+
+We shipped a Java/Spring Boot web app (Thymeleaf, SQLite) that a resident uses on their own phone. They log in, pick a free cycle, and book it after OCR reads their ID card. At the stand they type their passcode while the guard watches; the guard has no device. At return they tick the parts the guard found broken, and a broken critical part sends the cycle to repair. The GS sees weekly usage hours and a maintenance list with a Repaired button. There are 126 automated tests. Scope change: the OpenNLP comment classifier from the proposal was dropped. Mid-demo feedback asked for a cycle's properties to decide its state, so per-part condition replaced it.
+
+Stakeholder verdict: \todo{accepted / partially accepted / not accepted, by the Jamuna GS, date}. The app was not deployed to a public URL by the submission date; it runs from the Docker image.
+
+\section{Course concepts used in the project}
+
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Module \todo{n} -- Prompt and context engineering.} A standing context file gives Claude Code the hard constraints (Java only, zero cost, explainable code), conventions and PR workflow every session. File: \texttt{CLAUDE.md}. Commit: \texttt{63bc00c}.
+  \item \textbf{Module \todo{n} -- Version control workflow.} One branch per feature, short commits, every PR reviewed and merged by the other member (PRs \#2--\#23); the weekly script refuses to run on \texttt{main}. Files: \texttt{PLAN.md} (Team and work split), \texttt{scripts/weekly-update.sh}. Commit: \texttt{63bc00c}.
+  \item \textbf{Module \todo{n} -- Testing concurrency.} Two real threads book the same cycle on real SQLite (deliberately not \texttt{@Transactional}); exactly one wins via a conditional \texttt{UPDATE}. File: \texttt{DefaultBookingServiceTest.java}, \texttt{CycleRepository.java}. Commit: \texttt{4630526}.
+  \item \textbf{Module \todo{n} -- Testable time.} An injected \texttt{java.time.Clock} lets rule tests sit exactly on the edges (23 h vs 25 h held, 3rd vs 4th booking in 7 days). Files: \texttt{ClockConfig.java}, \texttt{DefaultRuleServiceTest.java}. Commit: \texttt{4630526}.
+  \item \textbf{Module \todo{n} -- Systematic debugging.} A real ID card was rejected although every character was read; measuring each stage led to weakest-character confidence and a 3-version vote, raising reads from 3 to 9 out of 10 photos. File: \texttt{IdCardScanner.java}. Commit: \texttt{8556d7e}.
+  \item \textbf{Module \todo{n} -- Modular design and refactoring.} One service interface per module, package-private implementations, records instead of entities across modules; the cycle-parts contract was merged first so both members could build in parallel. Files: \texttt{MaintenanceService.java}, \texttt{Part.java}. Commit: \texttt{72b3895}.
+  \item \textbf{Module \todo{n} -- Documentation of decisions.} Seven ADRs, a schema doc built from the real generated DDL, and request flowcharts. Files: \texttt{docs/decisions/}, \texttt{docs/SCHEMA.md}, \texttt{docs/FLOWS.md}. Commit: \texttt{d3d3a8f}.
+  \item \textbf{Module \todo{n} -- Code review.} Review reproduced a passcode-loss bug with a test; the importer became all-or-nothing. Files: \texttt{ResidentImporter.java}, \texttt{ResidentImporterTest.java}. Commit: \texttt{1356a9c}.
+  \item \textbf{Module \todo{n} -- Secure defaults.} BCrypt passcodes, role-based access (only the GS reaches reports and repairs), no seed login in production. Files: \texttt{SecurityConfig.java}, \texttt{application-prod.properties}. Commit: \texttt{21cf63f}.
+\end{itemize}
+
+\section{AI-usage summary}
+
+\textbf{Tools used.}
+Claude Code (Anthropic) for essentially all AI-assisted work, by both members; no other AI tools.
+
+\textbf{One substantive help.}
+Claude Code wrote the History tab end to end (\texttt{BookingService.history}, \texttt{HistoryController.java}, \texttt{history.html} and its tests) in one session, and it merged as written (PR \#6).
+
+\textbf{One substantive failure caught in review.}
+The AI-written \texttt{ResidentImporter.java} saved each resident as it read the CSV but wrote the passcode file only at the end. A later malformed line, such as a comma inside a name, left earlier residents saved with passcodes nobody had. A reproducing test caught this in review before merge (PR \#16). This is a silent partial failure from a missing transaction boundary, in the vocabulary of Module \todo{Lecture 8/9 module name}.
+
+\textbf{Net-effect sentence.}
+Net help: between 27 Oct and 5 Nov we merged 20 reviewed PRs and went from 61 tests (mid-demo) to 126. The cost was review time, and the bug above would have locked real residents out had review not caught it.
+
+\section{Deployment and stakeholder handoff}
+
+\textbf{Build and run.}
+\begin{verbatim}
+  docker load -i jamuna-wheels-<sha>.tar.gz
+  docker run --rm -p 8080:8080 jamuna-wheels:<sha>
+  # open http://localhost:8080, log in as ce24b128@smail.iitm.ac.in / cycle1234
+\end{verbatim}
+
+\textbf{Where the artefact lives after the course.}
+In the GitHub repository. A live deployment on an Azure for Students VM is prepared (ADR 0007, \texttt{docs/DEPLOY.md}, \texttt{docs/HANDOVER.md}) but was not done by the submission date, so it does not run at the hostel yet.
+
+\textbf{Stakeholder quote (one sentence, verbatim).}
+\begin{quote}
+\textit{``\todo{the GS's exact words}''\\
+-- \todo{Name}, General Secretary, Jamuna Hostel, \todo{date}.}
+\end{quote}
+
+\section{Known limitations}
+
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{OCR on cards other than the one we tested.} Real-card evidence is one IIT Madras card (9 of 10 photos read) plus 18 synthetic cards. Under glare or on another layout the scan fails, and the resident falls back to typing their roll number after 3 tries. OCR also once read an 8 as a 5 at 95+ confidence. The exact match with the login prevents a wrong booking, but it shows up as a false rejection.
+  \item \textbf{Safety rules that rely on SQLite's single connection.} ``One open rental per resident'' is enforced in the service, not the database. It holds only because the pool has one connection, and enlarging the pool would let two simultaneous bookings by the same resident through. SQLite foreign keys are also off, so hand-written SQL can leave orphan rows.
+  \item \textbf{Resident comments raise no flags.} With the classifier cut, a comment like ``brakes feel weak'' reaches the GS only as text. The cycle stays bookable until a guard marks the part broken at a return.
+\end{itemize}
+
+\section{Individual contributions}
+
+\begin{itemize}[leftmargin=*,nosep]
+  \item \textbf{Yashas Katyal:}
+    \begin{itemize}[nosep]
+      \item backend lead: project skeleton, persistence and login, the rule engine and race-safe booking lock with its test, the OCR prototype, guard note and comment box (weeks 0--4);
+      \item the cycle-parts contract and backend with the fit-to-ride rule (PRs \#9, \#17), GS config for production (\#20), the hosting move to Azure (ADR 0007, \#21), final docs and handover guide (\#22);
+      \item reviewed Aditya's PRs.
+    \end{itemize}
+  \item \textbf{Aditya Gautam:}
+    \begin{itemize}[nosep]
+      \item frontend lead: ID check wired into booking, passcode pickup and return, usage report, and the real-card OCR fix (week 3);
+      \item the schema, flows and work-split docs after the mid-demo;
+      \item tab bar, cycle cards, guard confirmation panel, History tab, GS maintenance list, return checklist, known issues and cycle detail page (\#3--\#7, \#11--\#13);
+      \item booking cancel (\#18), GS role and Repaired button (\#19), production profile, resident importer and deploy guide (\#16, ADR 0006), the Dockerfile (\#23);
+      \item reviewed Yashas's PRs.
+    \end{itemize}
+  \item Stakeholder liaison: \todo{who talked to the GS}.
+\end{itemize}
+
+\end{document}
